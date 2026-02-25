@@ -1,0 +1,23 @@
+### Updated Main Features Table (Drug Inventory Removed from #04)
+
+Since the clinic does not have a pharmacy, I have removed the "Manage a basic drug inventory/master list for the clinic" bullet from feature #04. I kept the feature name as **Prescription Management & Drug Safety** (to reflect the AI drug checker integration, which is handled in the separate AI/ML section). The description now focuses on digital prescriptions only.
+
+Here is the full updated table:
+
+| Registration Number | Name of Feature/s                              | Brief description of feature(s) in point form |
+|---------------------|------------------------------------------------|----------------------------------------------|
+| 01 IT24103228       | Patient and Staff Management                   | • Register, update, search, securely view patient profiles (demographics, history)<br>• Manage staff profiles, roles, availability<br>• Unified role-based access and privacy controls for patients/staff |
+| 02 IT24104107       | Appointment Scheduling & Billing               | • Book/update/cancel appointments with calendar & validation<br>• Record fees, generate receipts, track payments/dues<br>• Automated reminders |
+| 03 IT24201016       | Medical Records & Consultation Management      | • Record and retrieve consultation notes, diagnosis, and treatment history<br>• Implement CRUD for clinical vitals (weight, BP, temperature) with basic trend viewing<br>• Secure linking to appointments and patient profiles |
+| 04 IT24103073       | Prescription Management & Drug Safety          | • Create, update, and search digital prescriptions<br>• Generate professional PDF prescriptions |
+| 05 IT24101175       | Patient Awareness Alert System                 | • Create events/announcements<br>• Target patients by criteria<br>• Send personalized email/SMS notifications<br>• Track delivery status |
+| 06 IT24102346       | Patient Review & Feedback System               | • Post-visit feedback collection (ratings + comments)<br>• Aggregated dashboard for trends<br>• Moderation, reply, reporting |
+
+This keeps the feature focused on digital prescription creation/generation (practical for a private clinic without pharmacy). The AI drug safety checker remains in the separate AI/ML section (no change needed there).
+
+If you want:
+- Rename #04 to "Prescription Management" (remove "Drug Safety" from name)
+- Add a new bullet (e.g., "Attach notes or instructions to prescriptions")
+- Full TAF with this table
+
+Let me know! This version is clean and accurate for your client. Good adjustment – shows you're listening to client needs! 🚀

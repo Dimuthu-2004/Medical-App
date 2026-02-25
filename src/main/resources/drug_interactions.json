@@ -1,0 +1,51 @@
+[
+    {
+        "drug1": "aspirin",
+        "drug2": "warfarin",
+        "severity": "SEVERE",
+        "description": "Risk of severe bleeding. Aspirin increases the anti-platelet effect while Warfarin increases anticoagulation. Combined use significantly raises the risk of gastrointestinal and internal bleeding.",
+        "status": "INTERACTION_FOUND"
+    },
+    {
+        "drug1": "fluoxetine",
+        "drug2": "phenelzine",
+        "severity": "SEVERE",
+        "description": "Risk of serotonin syndrome. Combining SSRIs with MAOIs can lead to dangerously high levels of serotonin, causing confusion, rapid heart rate, and potentially fatal complications.",
+        "status": "INTERACTION_FOUND"
+    },
+    {
+        "drug1": "ibuprofen",
+        "drug2": "lisinopril",
+        "severity": "MODERATE",
+        "description": "NSAIDs like ibuprofen can reduce the antihypertensive effect of ACE inhibitors like lisinopril and increase the risk of renal impairment.",
+        "status": "INTERACTION_FOUND"
+    },
+    {
+        "drug1": "simvastatin",
+        "drug2": "amiodarone",
+        "severity": "MODERATE",
+        "description": "Amiodarone increases the blood level of simvastatin, which may increase the risk of muscle damage (rhabdomyolysis).",
+        "status": "INTERACTION_FOUND"
+    },
+    {
+        "drug1": "digoxin",
+        "drug2": "furosemide",
+        "severity": "MODERATE",
+        "description": "Furosemide can cause electrolyte imbalances (hypokalemia) which increases the toxicity of digoxin, potentially leading to arrhythmias.",
+        "status": "INTERACTION_FOUND"
+    },
+    {
+        "drug1": "spironolactone",
+        "drug2": "lisinopril",
+        "severity": "MODERATE",
+        "description": "Both medications can increase potassium levels. Combined use may lead to hyperkalemia, especially in patients with renal impairment.",
+        "status": "INTERACTION_FOUND"
+    },
+    {
+        "drug1": "sildenafil",
+        "drug2": "nitroglycerin",
+        "severity": "SEVERE",
+        "description": "Contraindicated. Co-administration can cause severe and potentially fatal hypotension (dangerously low blood pressure).",
+        "status": "INTERACTION_FOUND"
+    }
+]

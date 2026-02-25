@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .content {
+            padding: 40px;
+            color: #4a5568;
+            line-height: 1.6;
+        }
+
+        .token-circle {
+            width: 120px;
+            height: 120px;
+            background-color: #f0f4ff;
+            border: 4px solid #667eea;
+            border-radius: 60px;
+            margin: 30px auto;
+            text-align: center;
+        }
+
+        .token-number {
+            font-size: 42px;
+            font-weight: 900;
+            color: #667eea;
+            margin: 0;
+            line-height: 120px;
+            vertical-align: middle;
+        }
+
+        .token-label {
+            font-size: 10px;
+            color: #764ba2;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .details-list {
+            margin: 20px 0;
+            padding: 0;
+            list-style: none;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .details-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .footer {
+            background: #f7fafc;
+            padding: 20px;
+            text-align: center;
+            color: #a0aec0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Appointment Confirmed</h1>
+        </div>
+        <div class="content">
+            <h2 style="text-align: center;">You're All Set!</h2>
+            <p>Hi <span th:text="${name}">User</span>, your appointment has been successfully scheduled. Here is your
+                entry token:</p>
+
+            <div
+                style="text-align: center; margin-bottom: 5px; color: #764ba2; font-weight: bold; font-size: 12px; letter-spacing: 1px; text-transform: uppercase;">
+                Token</div>
+            <div class="token-circle">
+                <p class="token-number" th:text="${token}">#--</p>
+            </div>
+
+            <ul class="details-list">
+                <li><span>Doctor:</span> <strong th:text="${doctor}">Dr. Smith</strong></li>
+                <li><span>Date:</span> <strong th:text="${date}">2024-01-01</strong></li>
+                <li><span>Session:</span> <strong th:text="${session}">Morning</strong></li>
+            </ul>
+
+            <p
+                style="background: #fffaf0; padding: 15px; border-radius: 8px; border-left: 4px solid #ed8936; font-size: 14px;">
+                <strong>Note:</strong> Please arrive 15 minutes before your scheduled session. Show this email or your
+                dashboard token at the reception.
+            </p>
+            <p>Stay Healthy,<br>The SmartClinic Team</p>
+        </div>
+        <div class="footer">
+            &copy; 2024 SmartClinic. Healing with technology.
+        </div>
+    </div>
+</body>
+
+</html>
