@@ -48,12 +48,12 @@ function VitalTrends({ vitals }) {
                                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
                         <XAxis dataKey="date" stroke="#64748b" fontSize={12} tickMargin={10} />
                         <YAxis stroke="#64748b" fontSize={12} />
                         <Tooltip
-                            contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12 }}
-                            itemStyle={{ color: '#f8fafc' }}
+                            contentStyle={{ background: 'var(--app-surface)', border: '1px solid var(--app-border)', borderRadius: 12 }}
+                            itemStyle={{ color: 'var(--app-text)' }}
                         />
                         <Area type="monotone" dataKey="bpSystems" name="Systolic" stroke="#ef4444" fillOpacity={1} fill="url(#colorSys)" strokeWidth={3} />
                         <Area type="monotone" dataKey="bpDiastolic" name="Diastolic" stroke="#3b82f6" fillOpacity={1} fill="url(#colorDia)" strokeWidth={3} />
@@ -64,10 +64,10 @@ function VitalTrends({ vitals }) {
             <ChartCard title="Heart Rate & Temp" unit="bpm / °C">
                 <ResponsiveContainer width="100%" height={250}>
                     <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
                         <XAxis dataKey="date" stroke="#64748b" fontSize={12} tickMargin={10} />
                         <YAxis stroke="#64748b" fontSize={12} />
-                        <Tooltip contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 12, boxShadow: '0 10px 15px rgba(0,0,0,0.3)' }} />
+                        <Tooltip contentStyle={{ background: 'var(--app-surface)', border: '1px solid var(--app-border)', borderRadius: 12, boxShadow: '0 10px 15px rgba(2, 6, 23, 0.12)' }} />
                         <Legend iconType="circle" wrapperStyle={{ paddingTop: 20 }} />
                         <Line type="monotone" dataKey="hr" name="Heart Rate" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981' }} activeDot={{ r: 6 }} />
                         <Line type="monotone" dataKey="temp" name="Temperature" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#f59e0b' }} activeDot={{ r: 6 }} />
@@ -86,7 +86,7 @@ function VitalTrends({ vitals }) {
                         </defs>
                         <XAxis dataKey="date" stroke="#64748b" fontSize={12} hide />
                         <YAxis stroke="#64748b" fontSize={12} unit="kg" />
-                        <Tooltip contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 12 }} />
+                        <Tooltip contentStyle={{ background: 'var(--app-surface)', border: '1px solid var(--app-border)', borderRadius: 12 }} />
                         <Area type="monotone" dataKey="weight" name="Weight" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorWeight)" strokeWidth={3} />
                     </AreaChart>
                 </ResponsiveContainer>
@@ -348,12 +348,13 @@ export default function MedicalRecordsPage({ initialTab = 'records' }) {
                                                 {!data?.currentUserRole?.includes('PATIENT') && (
                                                     <div style={{ display: 'flex', gap: 10 }}>
                                                         <motion.button
-                                                            whileHover={{ scale: 1.1, color: '#3b82f6' }}
-                                                            whileTap={{ scale: 0.9 }}
+                                                            whileHover={{ scale: 1.03 }}
+                                                            whileTap={{ scale: 0.98 }}
                                                             onClick={() => setEditingVitals(v)}
-                                                            style={S.deleteBtn}
+                                                            style={S.editVitalsBtn}
                                                         >
-                                                            <Edit3 size={14} />
+                                                            <Edit3 size={16} />
+                                                            Update
                                                         </motion.button>
                                                         <motion.button
                                                             whileHover={{ scale: 1.1, color: '#ef4444' }}
@@ -511,12 +512,12 @@ const VitalItem = ({ label, value, unit, color }) => value != null ? (
 const FieldRow = ({ label, value, color }) => (
     <div style={{ marginBottom: '0.75rem' }}>
         <div style={{ color: '#64748b', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</div>
-        <div style={{ color: color || '#cbd5e1', fontSize: '0.95rem', lineHeight: 1.6 }}>{value}</div>
+        <div style={{ color: color || '#334155', fontSize: '0.95rem', lineHeight: 1.6 }}>{value}</div>
     </div>
 );
 
 const EmptyState = ({ icon, text }) => (
-    <div style={{ textAlign: 'center', padding: '5rem 2rem', color: '#64748b', background: 'rgba(255,255,255,0.02)', borderRadius: 24, border: '1px dashed rgba(255,255,255,0.1)' }}>
+    <div style={{ textAlign: 'center', padding: '5rem 2rem', color: '#64748b', background: 'var(--app-surface)', borderRadius: 24, border: '1px dashed var(--app-border)' }}>
         <div style={{ fontSize: '3rem', marginBottom: '1.25rem' }}>{icon}</div>
         <p style={{ margin: 0, fontWeight: 600 }}>{text}</p>
     </div>
@@ -525,7 +526,7 @@ const EmptyState = ({ icon, text }) => (
 const AlertIcon = () => <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>;
 
 const LoadingScreen = () => (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0f172a', color: '#64748b', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--app-bg)', color: 'var(--app-muted)', flexDirection: 'column', gap: 16 }}>
         <Heart size={40} color="#3b82f6" style={{ animation: 'pulse 1s infinite alternate' }} />
         Loading clinical data...
         <style>{`@keyframes pulse { from{opacity:.4} to{opacity:1} }`}</style>
@@ -533,59 +534,60 @@ const LoadingScreen = () => (
 );
 
 const S = {
-    container: { minHeight: '100vh', background: 'radial-gradient(circle at top right, #1a2744, #0f172a)', padding: '2.5rem 1.5rem', fontFamily: 'Inter,system-ui,sans-serif', color: '#f8fafc' },
+    container: { minHeight: '100vh', background: 'var(--app-bg)', padding: '2.5rem 1.5rem', fontFamily: 'Inter,system-ui,sans-serif', color: 'var(--app-text)' },
     wrapper: { maxWidth: '1100px', margin: '0 auto' },
     header: { display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2.5rem' },
-    backBtn: { display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', textDecoration: 'none', fontWeight: 700, padding: '10px 18px', borderRadius: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', flexShrink: 0, transition: 'all 0.2s' },
-    title: { margin: 0, fontSize: '2.2rem', fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.02em' },
-    subtitle: { margin: '6px 0 0', color: '#64748b', fontSize: '1.1rem' },
+    backBtn: { display: 'flex', alignItems: 'center', gap: 8, color: '#334155', textDecoration: 'none', fontWeight: 700, padding: '10px 18px', borderRadius: 12, background: 'var(--app-surface)', border: '1px solid var(--app-border)', flexShrink: 0, transition: 'all 0.2s' },
+    title: { margin: 0, fontSize: '2.2rem', fontWeight: 900, color: 'var(--app-text)', letterSpacing: '-0.02em' },
+    subtitle: { margin: '6px 0 0', color: 'var(--app-muted)', fontSize: '1.1rem' },
     backLink: { color: '#3b82f6', textDecoration: 'none', fontWeight: 700 },
 
-    patientStrip: { display: 'flex', alignItems: 'center', gap: '2rem', background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(10px)', borderRadius: 24, padding: '1.75rem 2rem', marginBottom: '2rem', border: '1px solid rgba(255,255,255,0.08)', flexWrap: 'wrap' },
+    patientStrip: { display: 'flex', alignItems: 'center', gap: '2rem', background: 'var(--app-surface)', borderRadius: 24, padding: '1.75rem 2rem', marginBottom: '2rem', border: '1px solid var(--app-border)', flexWrap: 'wrap', boxShadow: '0 10px 15px -3px rgba(2,6,23,0.06)' },
     patientAvatar: { width: 64, height: 64, background: 'linear-gradient(135deg,#3b82f6,#8b5cf6)', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, fontSize: '1.6rem', flexShrink: 0, boxShadow: '0 8px 16px rgba(59, 130, 246, 0.2)' },
     patientDetails: { flex: 1 },
-    patientName: { color: '#f8fafc', fontWeight: 900, fontSize: '1.3rem' },
-    patientMeta: { color: '#94a3b8', fontSize: '0.9rem', marginTop: 6, fontWeight: 500 },
+    patientName: { color: 'var(--app-text)', fontWeight: 900, fontSize: '1.3rem' },
+    patientMeta: { color: 'var(--app-muted)', fontSize: '0.9rem', marginTop: 6, fontWeight: 500 },
     bloodGroup: { marginLeft: 10, background: 'rgba(244,63,94,0.1)', color: '#f43f5e', padding: '3px 12px', borderRadius: 100, fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase' },
-    summaryStats: { display: 'flex', gap: '2.5rem', paddingLeft: '2rem', borderLeft: '1px solid rgba(255,255,255,0.08)' },
+    summaryStats: { display: 'flex', gap: '2.5rem', paddingLeft: '2rem', borderLeft: '1px solid var(--app-border)' },
 
-    tabs: { display: 'flex', gap: '0.75rem', marginBottom: '2rem', background: 'rgba(255,255,255,0.02)', padding: 8, borderRadius: 18, border: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap' },
-    tab: { padding: '12px 24px', borderRadius: 14, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', transition: 'all 0.2s' },
+    tabs: { display: 'flex', gap: '0.75rem', marginBottom: '2rem', background: 'var(--app-surface)', padding: 8, borderRadius: 18, border: '1px solid var(--app-border)', flexWrap: 'wrap' },
+    tab: { padding: '12px 24px', borderRadius: 14, border: 'none', background: 'transparent', color: 'var(--app-muted)', cursor: 'pointer', fontWeight: 700, fontSize: '0.95rem', transition: 'all 0.2s' },
     tabActive: { background: '#3b82f6', color: '#fff', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)' },
 
     cardList: { display: 'flex', flexDirection: 'column', gap: '1rem' },
 
-    recordCard: { background: 'rgba(255,255,255,0.03)', borderRadius: 22, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden', backdropFilter: 'blur(5px)' },
+    recordCard: { background: 'var(--app-surface)', borderRadius: 22, border: '1px solid var(--app-border)', overflow: 'hidden' },
     recordHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 1.75rem', cursor: 'pointer' },
     recordIcon: { width: 44, height: 44, background: 'rgba(59,130,246,0.1)', color: '#60a5fa', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-    recordDate: { color: '#64748b', fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase' },
-    recordDiagnosis: { color: '#f1f5f9', fontWeight: 800, fontSize: '1.1rem', marginTop: 4 },
-    recordBody: { padding: '0 1.75rem 1.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden', paddingTop: '1.5rem' },
+    recordDate: { color: 'var(--app-muted)', fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase' },
+    recordDiagnosis: { color: 'var(--app-text)', fontWeight: 800, fontSize: '1.1rem', marginTop: 4 },
+    recordBody: { padding: '0 1.75rem 1.75rem', borderTop: '1px solid var(--app-border)', overflow: 'hidden', paddingTop: '1.5rem' },
 
     vitalsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: '1.25rem' },
-    vitalCard: { background: 'rgba(255,255,255,0.03)', borderRadius: 22, padding: '1.5rem', border: '1px solid rgba(255,255,255,0.07)', cursor: 'default' },
-    vitalDate: { color: '#64748b', fontSize: '0.8rem', fontWeight: 800, marginBottom: '1.25rem' },
+    vitalCard: { background: 'var(--app-surface)', borderRadius: 22, padding: '1.5rem', border: '1px solid var(--app-border)', cursor: 'default' },
+    vitalDate: { color: 'var(--app-muted)', fontSize: '0.8rem', fontWeight: 800, marginBottom: '1.25rem' },
     vitalGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' },
 
     trendsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '1.5rem' },
-    chartSection: { background: 'rgba(255,255,255,0.03)', borderRadius: 24, padding: '1.75rem', border: '1px solid rgba(255,255,255,0.06)' },
+    chartSection: { background: 'var(--app-surface)', borderRadius: 24, padding: '1.75rem', border: '1px solid var(--app-border)' },
     chartHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' },
-    chartTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#f8fafc' },
+    chartTitle: { margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--app-text)' },
     chartUnit: { fontSize: '0.75rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' },
 
 
     deleteBtn: { background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 6, transition: 'all 0.2s' },
+    editVitalsBtn: { display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.35)', color: '#2563eb', cursor: 'pointer', padding: '7px 12px', borderRadius: 10, fontSize: '0.82rem', fontWeight: 800, fontFamily: 'inherit', transition: 'all 0.2s' },
 
     // Modal Styles
     modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 20 },
-    modalCard: { background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 28, width: '100%', maxWidth: 550, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', overflow: 'hidden' },
-    modalHeader: { padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    modalCard: { background: 'var(--app-surface)', border: '1px solid var(--app-border)', borderRadius: 28, width: '100%', maxWidth: 550, boxShadow: '0 25px 50px -12px rgba(2,6,23,0.18)', overflow: 'hidden' },
+    modalHeader: { padding: '1.5rem 2rem', borderBottom: '1px solid var(--app-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     modalBody: { padding: '2rem', maxHeight: '70vh', overflowY: 'auto' },
-    modalFooter: { padding: '1.5rem 2rem', background: 'rgba(0,0,0,0.2)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' },
+    modalFooter: { padding: '1.5rem 2rem', background: 'var(--app-bg-muted)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' },
     closeBtn: { background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', padding: 4 },
-    inputLabel: { display: 'block', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: '#94a3b8', marginBottom: 8, letterSpacing: '0.05em' },
-    input: { width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 16px', color: '#f8fafc', fontSize: '1rem', outline: 'none' },
-    textarea: { width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 16px', color: '#f8fafc', fontSize: '1rem', outline: 'none', minHeight: 100, resize: 'vertical' },
-    cancelBtn: { padding: '12px 24px', borderRadius: 12, border: 'none', background: 'transparent', color: '#94a3b8', fontWeight: 700, cursor: 'pointer' },
+    inputLabel: { display: 'block', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', color: '#475569', marginBottom: 8, letterSpacing: '0.05em' },
+    input: { width: '100%', background: 'var(--app-bg)', border: '1px solid var(--app-border)', borderRadius: 12, padding: '12px 16px', color: 'var(--app-text)', fontSize: '1rem', outline: 'none' },
+    textarea: { width: '100%', background: 'var(--app-bg)', border: '1px solid var(--app-border)', borderRadius: 12, padding: '12px 16px', color: 'var(--app-text)', fontSize: '1rem', outline: 'none', minHeight: 100, resize: 'vertical' },
+    cancelBtn: { padding: '12px 24px', borderRadius: 12, border: 'none', background: 'transparent', color: '#334155', fontWeight: 700, cursor: 'pointer' },
     saveBtn: { padding: '12px 28px', borderRadius: 12, border: 'none', background: '#3b82f6', color: '#fff', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 },
 };

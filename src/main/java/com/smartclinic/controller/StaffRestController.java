@@ -22,7 +22,7 @@ public class StaffRestController {
 
     /** Toggle staff self-availability */
     @PatchMapping("/availability")
-    @PreAuthorize("hasAnyRole('RECEPTIONIST', 'NURSE', 'STAFF')")
+    @PreAuthorize("hasAnyRole('NURSE', 'STAFF')")
     public ResponseEntity<?> updateSelfAvailability(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody Map<String, Boolean> body) {

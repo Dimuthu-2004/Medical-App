@@ -4,6 +4,7 @@ import com.smartclinic.model.*;
 import com.smartclinic.repository.*;
 import com.smartclinic.service.*;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +16,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/appointments")
+@RequiredArgsConstructor
 public class AppointmentRestController {
 
     private final AppointmentService appointmentService;
@@ -24,29 +26,26 @@ public class AppointmentRestController {
     private final ClinicHoursService clinicHoursService;
     private final EmailService emailService;
     private final AppointmentRepository appointmentRepository;
-
-    public AppointmentRestController(
-            AppointmentService appointmentService,
-            PatientService patientService,
-            DoctorProfileRepository doctorRepository,
-            UserRepository userRepository,
-            ClinicHoursService clinicHoursService,
-            EmailService emailService,
-            AppointmentRepository appointmentRepository) {
-        this.appointmentService = appointmentService;
-        this.patientService = patientService;
-        this.doctorRepository = doctorRepository;
-        this.userRepository = userRepository;
-        this.clinicHoursService = clinicHoursService;
-        this.emailService = emailService;
-        this.appointmentRepository = appointmentRepository;
-    }
+    private final DoctorUnavailabilityRepository doctorUnavailabilityRepository;
 
     /** Get available sessions for a given date */
     @GetMapping("/sessions")
     public List<ClinicHoursService.ClinicSession> getSessions(
-            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate date) {
-        return clinicHoursService.getBookingSessions(date);
+            @RequestParam @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(required = false) Long doctorId) {
+        List<ClinicHoursService.ClinicSession> sessions = clinicHoursService.getBookingSessions(date);
+        if (doctorId == null) return sessions;
+
+        DoctorProfile doctor = doctorRepository.findById(doctorId).orElse(null);
+        if (doctor == null || !doctor.isAvailable()) return List.of();
+
+        List<ClinicHoursService.ClinicSession> filtered = new ArrayList<>();
+        for (ClinicHoursService.ClinicSession s : sessions) {
+            if (!doctorUnavailabilityRepository.existsByDoctorAndDateAndSessionType(doctor, date, s.getType())) {
+                filtered.add(s);
+            }
+        }
+        return filtered;
     }
 
     /** List all doctors with availability */
@@ -130,9 +129,14 @@ public class AppointmentRestController {
                     .body(Map.of("error", "Appointment date must be today or in the future."));
         }
 
+        if (req.getSessionType() == null || req.getSessionType().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Please select a session."));
+        }
+
         // Validate doctor availability
+        DoctorProfile doctor = null;
         if (req.getDoctorId() != null) {
-            DoctorProfile doctor = doctorRepository.findById(req.getDoctorId()).orElse(null);
+            doctor = doctorRepository.findById(req.getDoctorId()).orElse(null);
             if (doctor == null) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Selected doctor not found."));
             }
@@ -141,18 +145,34 @@ public class AppointmentRestController {
                         Map.of("error", "The selected doctor is currently unavailable. Please choose another doctor."));
             }
             appointment.setDoctor(doctor);
+        } else {
+            appointment.setDoctor(null);
         }
 
         appointment.setAppointmentDate(req.getAppointmentDate());
 
         // Set session type
-        if (req.getSessionType() != null) {
-            try {
-                appointment.setSessionType(SessionType.valueOf(req.getSessionType()));
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Invalid session type."));
-            }
+        SessionType sessionType;
+        try {
+            sessionType = SessionType.valueOf(req.getSessionType().trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid session type."));
         }
+
+        // Validate booking window (e.g., can't book an already started session today).
+        boolean allowed = clinicHoursService.getBookingSessions(req.getAppointmentDate())
+                .stream()
+                .anyMatch(s -> s.getType() == sessionType);
+        if (!allowed) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Selected session is not available for booking."));
+        }
+
+        // Validate doctor unavailability
+        if (doctor != null && doctorUnavailabilityRepository.existsByDoctorAndDateAndSessionType(doctor, req.getAppointmentDate(), sessionType)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Doctor is unavailable for the selected date and session."));
+        }
+
+        appointment.setSessionType(sessionType);
 
         appointment.setNotes(req.getNotes());
 
@@ -241,7 +261,7 @@ public class AppointmentRestController {
 
     /** Check-in appointment */
     @PatchMapping("/{id}/check-in")
-    @PreAuthorize("hasAnyRole('STAFF', 'RECEPTIONIST', 'NURSE', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF', 'PHARMACIST', 'NURSE', 'ADMIN')")
     public ResponseEntity<?> checkIn(@PathVariable Long id) {
         return appointmentRepository.findById(id).map(appt -> {
             appt.setStatus(AppointmentStatus.CONFIRMED);
@@ -252,7 +272,7 @@ public class AppointmentRestController {
 
     /** Issue Walk-in appointment */
     @PostMapping("/walk-in")
-    @PreAuthorize("hasAnyRole('STAFF', 'RECEPTIONIST', 'NURSE', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF', 'PHARMACIST', 'NURSE', 'ADMIN')")
     public ResponseEntity<?> issueWalkIn(@RequestBody Map<String, Long> req) {
         Long patientId = req.get("patientId");
         Patient patient = patientService.findById(patientId).orElseThrow();

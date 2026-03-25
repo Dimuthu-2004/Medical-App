@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import com.smartclinic.model.DoctorProfile;
 
@@ -20,8 +21,14 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
         long countByAppointmentDateAndSessionType(java.time.LocalDate date,
                         com.smartclinic.model.SessionType sessionType);
 
+        long countByDoctorAndAppointmentDateAndSessionType(DoctorProfile doctor,
+                        java.time.LocalDate date, com.smartclinic.model.SessionType sessionType);
+
         boolean existsByPatientAndAppointmentDateAndSessionType(com.smartclinic.model.Patient patient,
                         java.time.LocalDate date, com.smartclinic.model.SessionType sessionType);
+
+        boolean existsByPatientAndDoctorAndAppointmentDateAndSessionType(com.smartclinic.model.Patient patient,
+                        DoctorProfile doctor, java.time.LocalDate date, com.smartclinic.model.SessionType sessionType);
 
         java.util.List<Appointment> findByAppointmentDateAndSessionTypeOrderByTokenNumberAsc(java.time.LocalDate date,
                         com.smartclinic.model.SessionType sessionType);
@@ -30,4 +37,6 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
 
         List<Appointment> findByPatientAndStatusOrderByDateTimeDesc(com.smartclinic.model.Patient patient,
                         com.smartclinic.model.AppointmentStatus status);
+
+        Optional<Appointment> findByPaymentSlipPath(String paymentSlipPath);
 }

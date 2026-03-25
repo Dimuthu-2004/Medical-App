@@ -112,10 +112,10 @@ const AdminPatientProfile = () => {
                                 Contact & Communication
                             </h3>
                             <div style={S.cardGrid}>
-                                <DetailBox icon={<Phone size={16} />} label="Primary Phone" value={patient?.phone || 'N/A'} />
+                                <DetailBox icon={<Phone size={16} />} label="Primary Phone" value={patient?.phone || '0000000000'} />
                                 <DetailBox icon={<Phone size={16} />} label="Alternate Phone" value={patient?.alternatePhone || 'None'} />
                                 <div style={{ gridColumn: 'span 2' }}>
-                                    <DetailBox icon={<Mail size={16} />} label="Email Address" value={patient?.email || 'N/A'} />
+                                    <DetailBox icon={<Mail size={16} />} label="Email Address" value={patient?.email || patient?.username || 'N/A'} />
                                 </div>
                                 <div style={{ gridColumn: 'span 2' }}>
                                     <DetailBox icon={<MapPin size={16} />} label="Residential Address" value={patient?.address || 'Not Provided'} />

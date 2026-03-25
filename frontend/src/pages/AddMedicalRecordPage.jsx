@@ -150,26 +150,26 @@ const InputField = ({ label, value, onChange, placeholder, textarea = false, req
 );
 
 const LoadingScreen = () => (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0f172a', color: '#64748b' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--app-bg)', color: 'var(--app-muted)' }}>
         Loading patient details...
     </div>
 );
 
 const S = {
-    container: { minHeight: '100vh', background: 'radial-gradient(circle at top right, #1a2744, #0f172a)', padding: '2rem 1.5rem', fontFamily: 'Inter,system-ui,sans-serif' },
+    container: { minHeight: '100vh', background: 'var(--app-bg)', padding: '2rem 1.5rem', fontFamily: 'Inter,system-ui,sans-serif' },
     wrapper: { maxWidth: '800px', margin: '0 auto' },
     header: { display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2.5rem' },
-    backBtn: { display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', padding: '10px 18px', borderRadius: 12, cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' },
-    title: { margin: 0, fontSize: '1.8rem', fontWeight: 900, color: '#f8fafc' },
-    subtitle: { margin: '4px 0 0', color: '#64748b', fontSize: '1rem' },
+    backBtn: { display: 'flex', alignItems: 'center', gap: 8, color: '#334155', background: 'var(--app-surface)', border: '1px solid var(--app-border)', padding: '10px 18px', borderRadius: 12, cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem' },
+    title: { margin: 0, fontSize: '1.8rem', fontWeight: 900, color: 'var(--app-text)' },
+    subtitle: { margin: '4px 0 0', color: 'var(--app-muted)', fontSize: '1rem' },
 
-    card: { background: 'rgba(255,255,255,0.03)', borderRadius: 24, border: '1px solid rgba(255,255,255,0.08)', padding: '2rem', backdropFilter: 'blur(10px)' },
-    sectionHeader: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '1rem' },
-    sectionTitle: { margin: 0, fontSize: '1.2rem', fontWeight: 700, color: '#f1f5f9' },
+    card: { background: 'var(--app-surface)', borderRadius: 24, border: '1px solid var(--app-border)', padding: '2rem', boxShadow: '0 10px 15px -3px rgba(2,6,23,0.06)' },
+    sectionHeader: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: '2rem', borderBottom: '1px solid var(--app-border)', paddingBottom: '1rem' },
+    sectionTitle: { margin: 0, fontSize: '1.2rem', fontWeight: 700, color: 'var(--app-text)' },
 
     formGrid: { display: 'flex', flexDirection: 'column' },
-    label: { display: 'block', color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' },
-    input: { width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 16px', color: '#f8fafc', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box' },
+    label: { display: 'block', color: '#475569', fontSize: '0.8rem', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' },
+    input: { width: '100%', background: 'var(--app-bg)', border: '1px solid var(--app-border)', borderRadius: 12, padding: '12px 16px', color: 'var(--app-text)', fontSize: '1rem', outline: 'none', transition: 'border-color 0.2s', boxSizing: 'border-box' },
 
     footer: { marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' },
     saveBtn: { background: 'linear-gradient(135deg, #3b82f6, #2563eb)', color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 14, fontWeight: 700, fontSize: '1rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 10px 15px -3px rgba(59, 130, 246, 0.3)' }

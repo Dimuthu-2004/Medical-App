@@ -91,6 +91,9 @@ public class Appointment {
     @Column(name = "payment_slip_path", nullable = true)
     private String paymentSlipPath;
 
+    @Column(name = "payment_slip_uploaded_at", nullable = true)
+    private LocalDateTime paymentSlipUploadedAt;
+
     @OneToOne(mappedBy = "appointment", cascade = CascadeType.ALL)
     @JsonManagedReference
     private Feedback feedback;

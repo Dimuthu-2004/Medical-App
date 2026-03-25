@@ -1,9 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+    --app-bg: #f6fbff;
+    --app-bg-muted: #eef6ff;
+    --app-surface: #ffffff;
+    --app-surface-2: rgba(255, 255, 255, 0.72);
+    --app-text: #0b1220;
+    --app-muted: #5b6b83;
+    --app-border: rgba(15, 23, 42, 0.10);
+    --app-primary: #0ea5e9;
+    --app-primary-2: #2563eb;
+    --app-accent: #14b8a6;
+    --app-skeleton: rgba(15, 23, 42, 0.08);
+
+    --app-radius-lg: 16px;
+    --app-radius-xl: 22px;
+    --app-shadow-sm: 0 10px 25px rgba(15, 23, 42, 0.10);
+    --app-shadow-md: 0 22px 55px rgba(15, 23, 42, 0.16);
+
+    --app-font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --app-font-display: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
 html,
 body {
     margin: 0;
     padding: 0;
-    background-color: #f8fafc;
-    color: #1e293b;
+    background-color: var(--app-bg);
+    color: var(--app-text);
     min-height: 100vh;
 }
 
@@ -12,18 +36,46 @@ body {
 }
 
 body {
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-family: var(--app-font-sans);
+    font-size: 16px;
     overflow-x: hidden;
+    background-image:
+        radial-gradient(900px 550px at 12% 6%, rgba(14, 165, 233, 0.20) 0%, rgba(14, 165, 233, 0.00) 60%),
+        radial-gradient(820px 520px at 88% 10%, rgba(37, 99, 235, 0.14) 0%, rgba(37, 99, 235, 0.00) 62%),
+        radial-gradient(760px 520px at 70% 92%, rgba(20, 184, 166, 0.10) 0%, rgba(20, 184, 166, 0.00) 55%);
+    background-attachment: fixed;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
 }
 
 ::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(30, 41, 59, 0.4);
 }
 
 input:focus {
-    background: rgba(255, 255, 255, 0.14) !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35) !important;
+    background: #ffffff !important;
+    border-color: rgba(14, 165, 233, 0.9) !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25) !important;
 }
 
 @keyframes fadeInScale {
@@ -38,11 +90,132 @@ input:focus {
     }
 }
 
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spin {
+    animation: spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 /* Hover Utilities */
 .hover-blue:hover {
-    color: #3b82f6 !important;
+    color: var(--app-primary-2) !important;
 }
 
 .hover-red:hover {
     color: #ef4444 !important;
+}
+
+/* --- Minimal design system (opt-in via classes) --- */
+.app-container {
+    width: min(1120px, calc(100% - 40px));
+    margin: 0 auto;
+}
+
+.app-grid {
+    display: grid;
+    gap: 18px;
+}
+
+.app-glass {
+    background: var(--app-surface-2);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-xl);
+    box-shadow: var(--app-shadow-md);
+    backdrop-filter: blur(14px);
+}
+
+.app-card {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius-xl);
+    box-shadow: var(--app-shadow-sm);
+}
+
+.app-card-hover {
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+.app-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.16);
+    border-color: rgba(14, 165, 233, 0.30);
+}
+
+.app-btn {
+    appearance: none;
+    border: 1px solid var(--app-border);
+    border-radius: 999px;
+    padding: 12px 16px;
+    min-height: 44px;
+    line-height: 1;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--app-text);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+.app-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+    border-color: rgba(14, 165, 233, 0.35);
+}
+.app-btn:active {
+    transform: translateY(0px);
+}
+.app-btn-primary {
+    border: 0;
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.98), rgba(37, 99, 235, 0.98));
+}
+.app-btn-primary:hover {
+    box-shadow: 0 22px 55px rgba(37, 99, 235, 0.22);
+}
+
+.app-kicker {
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(14, 165, 233, 0.18);
+    background: rgba(255, 255, 255, 0.62);
+    color: rgba(15, 23, 42, 0.78);
+    font-weight: 800;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.app-display {
+    font-family: var(--app-font-display);
+    letter-spacing: -0.02em;
+}
+
+/* Make sticky glass nav feel less "boxy" when layered over photos. */
+.app-glass {
+    -webkit-backdrop-filter: blur(14px);
+}
+
+@media (max-width: 860px) {
+    .landing-stetho {
+        display: none !important;
+    }
+    .landing-dna {
+        display: none !important;
+    }
 }

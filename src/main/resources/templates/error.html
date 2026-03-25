@@ -1,30 +1,162 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{layout :: head('Error - SmartClinic')}"></head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - SmartClinic</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent-color: #38bdf8;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
 
-<body class="modern-dashboard-body">
-    <nav th:replace="~{layout :: navbar}"></nav>
-    <div class="container mt-5 pt-5">
-        <div class="card glass-card-enhanced mx-auto text-center" style="max-width: 600px; padding: 3rem;">
-            <div class="mb-4">
-                <i class="fas fa-exclamation-triangle fa-4x text-danger"></i>
-            </div>
-            <h2 class="mb-3">Oops! Something went wrong</h2>
-            <p class="lead mb-4"
-                th:text="${errorMessage != null ? errorMessage : 'An unexpected error occurred. Please try again or contact support.'}">
-            </p>
-            <div th:if="${errorType}" class="mb-4">
-                <small class="text-muted" th:text="'Error Type: ' + ${errorType}"></small>
-            </div>
-            <div class="d-flex justify-content-center gap-3">
-                <a href="/" class="btn btn-modern btn-primary-modern px-5">Go Home</a>
-                <button onclick="window.history.back()" class="btn btn-modern btn-outline-light text-primary px-5">Go
-                    Back</button>
-            </div>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-primary);
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 3.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            max-width: 650px;
+            width: 90%;
+            text-align: center;
+            animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeInScale {
+            0% {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .icon-wrapper {
+            width: 100px;
+            height: 100px;
+            background: rgba(244, 63, 94, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            color: #fb7185;
+            font-size: 3rem;
+            border: 1px solid rgba(244, 63, 94, 0.2);
+        }
+
+        h2 {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #f8fafc, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .error-message {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2.5rem;
+        }
+
+        .btn-modern {
+            padding: 0.8rem 2rem;
+            border-radius: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary-modern {
+            background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 10px 15px -3px rgba(14, 165, 233, 0.3);
+        }
+
+        .btn-primary-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 20px -5px rgba(14, 165, 233, 0.4);
+            color: white;
+        }
+
+        .btn-outline-modern {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-outline-modern:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: white;
+        }
+
+        .error-details {
+            margin-top: 2rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #fb7185;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(244, 63, 94, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="glass-card">
+        <div class="icon-wrapper">
+            <i class="fas fa-ghost"></i>
+        </div>
+        <h2>Oops! Something went wrong</h2>
+        <p class="error-message"
+            th:text="${errorMessage != null ? errorMessage : 'We encountered an unexpected error. This might be a temporary issue with our connection or a small glitch in the system.'}">
+        </p>
+
+        <div th:if="${errorType}" class="error-details mb-4">
+            <i class="fas fa-bug me-2"></i>
+            <span th:text="'System Error: ' + ${errorType}"></span>
+        </div>
+
+        <div class="d-flex justify-content-center gap-3">
+            <a href="/" class="btn btn-modern btn-primary-modern">
+                <i class="fas fa-home"></i> Go Home
+            </a>
+            <button onclick="window.history.back()" class="btn btn-modern btn-outline-modern">
+                <i class="fas fa-arrow-left"></i> Go Back
+            </button>
         </div>
     </div>
-    <div th:replace="~{layout :: scripts}"></div>
 </body>
 
 </html>

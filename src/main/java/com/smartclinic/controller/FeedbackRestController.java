@@ -3,6 +3,7 @@ package com.smartclinic.controller;
 import com.smartclinic.model.*;
 import com.smartclinic.repository.*;
 import com.smartclinic.service.FeedbackService;
+import com.smartclinic.service.SentimentAnalysisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,6 +22,8 @@ public class FeedbackRestController {
     private final FeedbackService feedbackService;
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
+    private final FeedbackRepository feedbackRepository;
+    private final SentimentAnalysisService sentimentAnalysisService;
 
     /** Patient: get past appointments (completed) with feedback status */
     @GetMapping("/my-feedbacks")
@@ -70,6 +73,26 @@ public class FeedbackRestController {
         }
     }
 
+    /** Public: show recent patient feedback without admin replies */
+    @GetMapping("/public")
+    public ResponseEntity<List<Map<String, Object>>> publicFeedbacks() {
+        List<Map<String, Object>> result = feedbackRepository.findAll().stream()
+                .sorted(Comparator.comparing(Feedback::getId, Comparator.nullsLast(Long::compareTo)).reversed())
+                .limit(8)
+                .map(fb -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", fb.getId());
+                    m.put("rating", fb.getRating());
+                    m.put("comment", fb.getComment());
+                    m.put("patientName", fb.getAppointment() != null && fb.getAppointment().getPatient() != null
+                            ? fb.getAppointment().getPatient().getName()
+                            : "Anonymous");
+                    return m;
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
     /** Patient: update own feedback */
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateFeedback(@PathVariable("id") Long id,
@@ -107,6 +130,9 @@ public class FeedbackRestController {
             m.put("comment", fb.getComment());
             m.put("adminReply", fb.getAdminReply());
             m.put("status", fb.getStatus() != null ? fb.getStatus().name() : null);
+            SentimentAnalysisService.SentimentResult sr = sentimentAnalysisService.analyze(fb.getComment());
+            m.put("sentiment", sr.label());
+            m.put("sentimentScore", sr.score());
             m.put("patientName", fb.getAppointment() != null && fb.getAppointment().getPatient() != null
                     ? fb.getAppointment().getPatient().getName()
                     : "Unknown");

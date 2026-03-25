@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,6 +24,7 @@ public class DoctorRestController {
     private final DoctorProfileRepository doctorProfileRepository;
     private final UserRepository userRepository;
     private final com.smartclinic.service.PatientService patientService;
+    private final DoctorUnavailabilityRepository doctorUnavailabilityRepository;
 
     public DoctorRestController(
             PatientRepository patientRepository,
@@ -30,13 +32,15 @@ public class DoctorRestController {
             PrescriptionRepository prescriptionRepository,
             DoctorProfileRepository doctorProfileRepository,
             UserRepository userRepository,
-            com.smartclinic.service.PatientService patientService) {
+            com.smartclinic.service.PatientService patientService,
+            DoctorUnavailabilityRepository doctorUnavailabilityRepository) {
         this.patientRepository = patientRepository;
         this.appointmentRepository = appointmentRepository;
         this.prescriptionRepository = prescriptionRepository;
         this.doctorProfileRepository = doctorProfileRepository;
         this.userRepository = userRepository;
         this.patientService = patientService;
+        this.doctorUnavailabilityRepository = doctorUnavailabilityRepository;
     }
 
     /** Dashboard data: patient list + today's queue summary */
@@ -161,10 +165,168 @@ public class DoctorRestController {
     @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
     public ResponseEntity<?> completeAppointment(@PathVariable("id") Long id) {
         return appointmentRepository.findById(id).map(appt -> {
+            // Temporarily relaxed for testing: allow completing consultation regardless of appointment date.
             appt.setStatus(AppointmentStatus.COMPLETED);
             appointmentRepository.save(appt);
             return ResponseEntity.ok(Map.of("message", "Appointment marked as completed"));
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    public static class UnavailabilityRequest {
+        public Long doctorId; // required for ADMIN; ignored for DOCTOR
+        public LocalDate date;
+        public String sessionType;
+    }
+
+    /** Doctor unavailability calendar: list */
+    @GetMapping("/unavailability")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public ResponseEntity<?> getUnavailability(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) Long doctorId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        if (from == null || to == null || to.isBefore(from)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid date range."));
+        }
+
+        User currentUser = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
+        String role = currentUser.getRole() == null ? "" : currentUser.getRole().toUpperCase();
+
+        Long effectiveDoctorId;
+        if (role.contains("ADMIN")) {
+            if (doctorId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "doctorId is required for admin."));
+            }
+            effectiveDoctorId = doctorId;
+        } else {
+            effectiveDoctorId = doctorProfileRepository.findByUserId(currentUser.getId()).map(DoctorProfile::getId).orElse(null);
+        }
+
+        if (effectiveDoctorId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Doctor profile not found."));
+        }
+
+        List<Map<String, Object>> out = doctorUnavailabilityRepository
+                .findByDoctorIdAndDateBetween(effectiveDoctorId, from, to)
+                .stream()
+                .map(u -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", u.getId());
+                    m.put("date", u.getDate());
+                    m.put("sessionType", u.getSessionType());
+                    m.put("createdAt", u.getCreatedAt());
+                    return m;
+                })
+                .toList();
+
+        return ResponseEntity.ok(out);
+    }
+
+    /** Doctor unavailability calendar: add */
+    @PostMapping("/unavailability")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public ResponseEntity<?> addUnavailability(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody UnavailabilityRequest req
+    ) {
+        if (req == null || req.date == null || req.sessionType == null || req.sessionType.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "date and sessionType are required."));
+        }
+        if (req.date.isBefore(LocalDate.now())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Date must be today or in the future."));
+        }
+
+        SessionType session;
+        try {
+            session = SessionType.valueOf(req.sessionType.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid session type."));
+        }
+
+        User currentUser = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
+        String role = currentUser.getRole() == null ? "" : currentUser.getRole().toUpperCase();
+
+        Long effectiveDoctorId;
+        if (role.contains("ADMIN")) {
+            if (req.doctorId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "doctorId is required for admin."));
+            }
+            effectiveDoctorId = req.doctorId;
+        } else {
+            effectiveDoctorId = doctorProfileRepository.findByUserId(currentUser.getId()).map(DoctorProfile::getId).orElse(null);
+        }
+
+        if (effectiveDoctorId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Doctor profile not found."));
+        }
+
+        DoctorProfile doctor = doctorProfileRepository.findById(effectiveDoctorId).orElse(null);
+        if (doctor == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Doctor profile not found."));
+        }
+
+        if (doctorUnavailabilityRepository.existsByDoctorAndDateAndSessionType(doctor, req.date, session)) {
+            return ResponseEntity.ok(Map.of("message", "Already marked unavailable."));
+        }
+
+        DoctorUnavailability u = new DoctorUnavailability();
+        u.setDoctor(doctor);
+        u.setDate(req.date);
+        u.setSessionType(session);
+        u.setCreatedAt(LocalDateTime.now());
+        doctorUnavailabilityRepository.save(u);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Marked unavailable.",
+                "date", u.getDate(),
+                "sessionType", u.getSessionType()
+        ));
+    }
+
+    /** Doctor unavailability calendar: remove */
+    @DeleteMapping("/unavailability")
+    @PreAuthorize("hasAnyRole('DOCTOR', 'ADMIN')")
+    public ResponseEntity<?> removeUnavailability(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam String sessionType,
+            @RequestParam(required = false) Long doctorId
+    ) {
+        if (date == null || sessionType == null || sessionType.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "date and sessionType are required."));
+        }
+        if (date.isBefore(LocalDate.now())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Date must be today or in the future."));
+        }
+
+        SessionType session;
+        try {
+            session = SessionType.valueOf(sessionType.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Invalid session type."));
+        }
+
+        User currentUser = userRepository.findByUsername(userDetails.getUsername()).orElseThrow();
+        String role = currentUser.getRole() == null ? "" : currentUser.getRole().toUpperCase();
+
+        Long effectiveDoctorId;
+        if (role.contains("ADMIN")) {
+            if (doctorId == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "doctorId is required for admin."));
+            }
+            effectiveDoctorId = doctorId;
+        } else {
+            effectiveDoctorId = doctorProfileRepository.findByUserId(currentUser.getId()).map(DoctorProfile::getId).orElse(null);
+        }
+
+        if (effectiveDoctorId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Doctor profile not found."));
+        }
+
+        doctorUnavailabilityRepository.deleteByDoctorIdAndDateAndSessionType(effectiveDoctorId, date, session);
+        return ResponseEntity.ok(Map.of("message", "Removed unavailability."));
     }
 
     /** Add prescription - same logic as DoctorController.addPrescription */
@@ -182,6 +344,14 @@ public class DoctorRestController {
         p.setMedication(medication);
         p.setInstructions(instructions);
         p.setDate(LocalDate.now());
+
+        // Keep the new multi-drug model consistent even for legacy endpoints.
+        PrescriptionItem item = new PrescriptionItem();
+        item.setPrescription(p);
+        item.setDrugName(medication != null ? medication : "Prescription");
+        item.setInstructions(instructions);
+        p.getItems().add(item);
+
         prescriptionRepository.save(p);
         return ResponseEntity.ok(Map.of("message", "Prescription added"));
     }

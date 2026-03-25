@@ -1,6 +1,7 @@
 package com.smartclinic.service;
 
 import com.smartclinic.model.Prescription;
+import com.smartclinic.model.PrescriptionItem;
 import com.smartclinic.model.DoctorProfile;
 import com.smartclinic.repository.PrescriptionRepository;
 import com.smartclinic.repository.DoctorProfileRepository;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,6 +34,10 @@ public class PrescriptionService {
         return prescriptionRepository.findByPatientId(patientId);
     }
 
+    public List<Prescription> getVisibleForPatient(Long patientId) {
+        return prescriptionRepository.findVisibleByPatientId(patientId);
+    }
+
     public List<Prescription> getAll() {
         return prescriptionRepository.findAll();
     }
@@ -46,6 +52,23 @@ public class PrescriptionService {
 
     public void delete(Long id) {
         prescriptionRepository.deleteById(id);
+    }
+
+    public Optional<Prescription> getVisibleByIdForPatient(Long id, String username) {
+        return prescriptionRepository.findVisibleByIdAndPatientUsername(id, username);
+    }
+
+    public boolean hideForPatient(Long id, String username) {
+        Optional<Prescription> maybe = prescriptionRepository
+                .findVisibleByIdAndPatientUsername(id, username);
+        if (maybe.isEmpty()) {
+            return false;
+        }
+        Prescription prescription = maybe.get();
+        prescription.setDeletedByPatient(true);
+        prescription.setDeletedByPatientAt(LocalDateTime.now());
+        prescriptionRepository.save(prescription);
+        return true;
     }
 
     public byte[] generatePdf(Long id) {
@@ -150,25 +173,40 @@ public class PrescriptionService {
             medCell.setBorderColor(borderGray);
             medCell.setPadding(15);
 
-            Paragraph medName = new Paragraph(p.getMedication().toUpperCase(),
-                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, primaryBlue));
-            medCell.addElement(medName);
+            List<PrescriptionItem> items = p.getItems();
+            if (items == null || items.isEmpty()) {
+                items = java.util.List.of(toLegacyItem(p));
+            }
 
-            Paragraph details = new Paragraph();
-            details.setFont(normalFont);
-            details.add(new Chunk("\nDosage: ", boldFont));
-            details.add(p.getDosage());
-            details.add(new Chunk("    Frequency: ", boldFont));
-            details.add(p.getFrequency());
-            details.add(new Chunk("    Duration: ", boldFont));
-            details.add(p.getDuration());
-            medCell.addElement(details);
+            for (int i = 0; i < items.size(); i++) {
+                PrescriptionItem it = items.get(i);
+                String drugName = it.getDrugName() != null ? it.getDrugName() : "Prescription";
 
-            medCell.addElement(new Paragraph(" "));
-            Paragraph inst = new Paragraph();
-            inst.add(new Chunk("INSTRUCTIONS: ", boldFont));
-            inst.add(p.getInstructions() != null ? p.getInstructions() : "As directed by physician.");
-            medCell.addElement(inst);
+                Paragraph medName = new Paragraph(drugName.toUpperCase(),
+                        FontFactory.getFont(FontFactory.HELVETICA_BOLD, 13, primaryBlue));
+                medCell.addElement(medName);
+
+                Paragraph details = new Paragraph();
+                details.setFont(normalFont);
+                details.add(new Chunk("Dosage: ", boldFont));
+                details.add(it.getDosage() != null ? it.getDosage() : "N/A");
+                details.add(new Chunk("    Frequency: ", boldFont));
+                details.add(it.getFrequency() != null ? it.getFrequency() : "N/A");
+                details.add(new Chunk("    Duration: ", boldFont));
+                details.add(it.getDuration() != null ? it.getDuration() : "N/A");
+                medCell.addElement(details);
+
+                Paragraph inst = new Paragraph();
+                inst.add(new Chunk("INSTRUCTIONS: ", boldFont));
+                inst.add(it.getInstructions() != null && !it.getInstructions().isBlank()
+                        ? it.getInstructions()
+                        : "As directed by physician.");
+                medCell.addElement(inst);
+
+                if (i != items.size() - 1) {
+                    medCell.addElement(new Paragraph(" "));
+                }
+            }
 
             medTable.addCell(medCell);
             document.add(medTable);
@@ -213,5 +251,15 @@ public class PrescriptionService {
             e.printStackTrace();
         }
         return out.toByteArray();
+    }
+
+    private static PrescriptionItem toLegacyItem(Prescription p) {
+        PrescriptionItem it = new PrescriptionItem();
+        it.setDrugName(p.getMedication() != null ? p.getMedication() : "Prescription");
+        it.setDosage(p.getDosage());
+        it.setFrequency(p.getFrequency());
+        it.setDuration(p.getDuration());
+        it.setInstructions(p.getInstructions());
+        return it;
     }
 }

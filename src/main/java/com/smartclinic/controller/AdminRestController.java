@@ -2,6 +2,7 @@ package com.smartclinic.controller;
 
 import com.smartclinic.model.User;
 import com.smartclinic.repository.*;
+import com.smartclinic.service.PatientAnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +28,9 @@ public class AdminRestController {
     private final PrescriptionRepository prescriptionRepository;
     private final ConsultationNoteRepository consultationNoteRepository;
     private final FeedbackRepository feedbackRepository;
+    private final MedicalRecordRepository medicalRecordRepository;
+    private final ClinicalVitalsRepository clinicalVitalsRepository;
+    private final PatientAnalyticsService patientAnalyticsService;
 
     /** Summary stats for the dashboard cards */
     @GetMapping("/stats")
@@ -42,6 +46,18 @@ public class AdminRestController {
         stats.put("totalDoctors", totalDoctors);
         stats.put("totalStaff", totalStaff);
         return ResponseEntity.ok(stats);
+    }
+
+    /** Admin reports: patient record visualization + clustering insights */
+    @GetMapping("/reports/patient-clusters")
+    public ResponseEntity<Map<String, Object>> getPatientClusterReport() {
+        return ResponseEntity.ok(patientAnalyticsService.buildPatientClusterReport());
+    }
+
+    /** Admin reports: disease age distribution */
+    @GetMapping("/reports/disease-age")
+    public ResponseEntity<Map<String, Object>> getDiseaseAgeReport() {
+        return ResponseEntity.ok(patientAnalyticsService.buildDiseaseAgeReport());
     }
 
     /** User list (with optional search) */
@@ -81,8 +97,8 @@ public class AdminRestController {
             if (roleUpper.contains("DOCTOR")) {
                 doctorProfileRepository.findByUserId(u.getId())
                         .ifPresent(d -> row.put("available", d.isAvailable()));
-            } else if (roleUpper.contains("RECEPTIONIST") || roleUpper.contains("NURSE")
-                    || roleUpper.contains("STAFF") || roleUpper.contains("PAYMENT_MANAGER")
+            } else if (roleUpper.contains("PHARMACIST") || roleUpper.contains("NURSE")
+                    || roleUpper.contains("STAFF") || roleUpper.contains("FINANCE_MANAGER")
                     || roleUpper.contains("LAB")) {
                 staffProfileRepository.findByUserId(u.getId())
                         .ifPresent(s -> row.put("available", s.isAvailable()));
@@ -107,29 +123,57 @@ public class AdminRestController {
             // Clean up patient data
             patientRepository.findByUserId(id).ifPresent(patient -> {
                 System.out.println("DEBUG: Deleting patient data for " + patient.getName());
+                // 1. Vitals
+                try {
+                    clinicalVitalsRepository.deleteAll(
+                            clinicalVitalsRepository.findByPatientOrderByRecordedAtDesc(patient));
+                } catch (Exception e) {
+                    System.err.println("WARN: Failed to delete clinical vitals: " + e.getMessage());
+                }
+                // 2. Medical Records
+                try {
+                    medicalRecordRepository.deleteAll(
+                            medicalRecordRepository.findByPatientId(patient.getId()));
+                } catch (Exception e) {
+                    System.err.println("WARN: Failed to delete medical records: " + e.getMessage());
+                }
+                // 3. Consultation Notes
                 try {
                     consultationNoteRepository.deleteAll(
                             consultationNoteRepository.findByPatientOrderByConsultationDateDesc(patient));
                 } catch (Exception e) {
                     System.err.println("WARN: Failed to delete consultation notes: " + e.getMessage());
                 }
+                // 4. Prescriptions
                 try {
                     prescriptionRepository.deleteAll(prescriptionRepository.findByPatientId(patient.getId()));
                 } catch (Exception e) {
                     System.err.println("WARN: Failed to delete prescriptions: " + e.getMessage());
                 }
+                // 5. Appointments & Feedback
                 appointmentRepository.findByPatientId(patient.getId()).forEach(appt -> {
                     try {
                         if (appt.getFeedback() != null) {
-                            feedbackRepository.deleteById(appt.getFeedback().getId());
+                            feedbackRepository.delete(appt.getFeedback());
                         }
                     } catch (Exception e) {
-                        System.err.println(
-                                "WARN: Failed to delete feedback for appt " + appt.getId() + ": " + e.getMessage());
+                        System.err.println("WARN: Failed to delete feedback for appt " + appt.getId());
                     }
-                    appointmentRepository.deleteById(appt.getId());
+                    try {
+                        appointmentRepository.delete(appt);
+                    } catch (Exception e) {
+                        System.err.println("WARN: Failed to delete appointment " + appt.getId());
+                    }
                 });
-                patientRepository.delete(patient);
+
+                // Sever link and delete profile
+                try {
+                    patient.setUser(null);
+                    patientRepository.saveAndFlush(patient);
+                    patientRepository.delete(patient);
+                } catch (Exception e) {
+                    System.err.println("WARN: Failed to delete patient profile: " + e.getMessage());
+                }
             });
 
             // Clean up doctor data
@@ -138,11 +182,10 @@ public class AdminRestController {
                 appointmentRepository.findByDoctor(doctor).forEach(a -> {
                     try {
                         if (a.getFeedback() != null) {
-                            feedbackRepository.deleteById(a.getFeedback().getId());
+                            feedbackRepository.delete(a.getFeedback());
                         }
                     } catch (Exception e) {
-                        System.err.println(
-                                "WARN: Failed to delete feedback for appt " + a.getId() + ": " + e.getMessage());
+                        System.err.println("WARN: Failed to delete doctor-appt feedback");
                     }
                     a.setDoctor(null);
                     appointmentRepository.save(a);
@@ -154,21 +197,38 @@ public class AdminRestController {
                 try {
                     prescriptionRepository.deleteAll(prescriptionRepository.findByDoctorId(user.getId()));
                 } catch (Exception e) {
-                    System.err.println("WARN: Failed to delete doctor prescriptions: " + e.getMessage());
+                    System.err.println("WARN: Failed to delete doctor prescriptions");
                 }
-                doctorProfileRepository.delete(doctor);
+                try {
+                    doctor.setUser(null);
+                    doctorProfileRepository.saveAndFlush(doctor);
+                    doctorProfileRepository.delete(doctor);
+                } catch (Exception e) {
+                    System.err.println("WARN: Failed to delete doctor profile: " + e.getMessage());
+                }
             });
 
             // Clean up staff profile
             staffProfileRepository.findByUserId(id).ifPresent(sp -> {
                 System.out.println("DEBUG: Deleting staff profile for user " + id);
-                staffProfileRepository.delete(sp);
+                try {
+                    sp.setUser(null);
+                    staffProfileRepository.saveAndFlush(sp);
+                    staffProfileRepository.delete(sp);
+                } catch (Exception e) {
+                    System.err.println("WARN: Failed to delete staff profile: " + e.getMessage());
+                }
             });
 
-            // Finally delete the user
-            userRepository.deleteById(id);
-            System.out.println("DEBUG: User " + id + " deleted successfully.");
-            return ResponseEntity.ok(Map.of("message", "User deleted successfully"));
+            // Final check on User and delete
+            if (userRepository.existsById(id)) {
+                userRepository.deleteById(id);
+                System.out.println("DEBUG: User " + id + " deleted explicitly.");
+            } else {
+                System.out.println("DEBUG: User " + id + " already gone (maybe deleted by cascade).");
+            }
+
+            return ResponseEntity.ok(Map.of("message", "User and all related data deleted successfully"));
 
         } catch (Exception e) {
             System.err.println("ERROR: Failed to delete user " + id + ": " + e.getMessage());
@@ -203,8 +263,12 @@ public class AdminRestController {
                 if (p.getUser() != null) {
                     details.put("username", p.getUser().getUsername());
                 }
-                details.put("email", p.getEmail());
-                details.put("phone", p.getPhone());
+                String resolvedEmail = p.getEmail();
+                if ((resolvedEmail == null || resolvedEmail.isBlank()) && p.getUser() != null) {
+                    resolvedEmail = p.getUser().getUsername();
+                }
+                details.put("email", resolvedEmail);
+                details.put("phone", (p.getPhone() == null || p.getPhone().isBlank()) ? "0000000000" : p.getPhone());
                 details.put("alternatePhone", p.getAlternatePhone());
                 details.put("address", p.getAddress());
                 details.put("nic", p.getNic());
@@ -223,12 +287,22 @@ public class AdminRestController {
                             System.out.println("DEBUG: User " + userId + " exists with role: " + role
                                     + " but no Patient profile record.");
                             if (role.contains("PATIENT")) {
-                                System.out.println("DEBUG: Returning basic user info for ID: " + userId);
+                                System.out.println("DEBUG: Creating missing patient profile for user " + userId);
+                                com.smartclinic.model.Patient created = new com.smartclinic.model.Patient();
+                                created.setUser(u);
+                                created.setName(u.getUsername());
+                                if (u.getUsername() != null && u.getUsername().contains("@")) {
+                                    created.setEmail(u.getUsername());
+                                }
+                                created.setPhone("0000000000");
+                                created = patientRepository.save(created);
+
                                 Map<String, Object> details = new HashMap<>();
-                                details.put("id", userId);
-                                details.put("name", u.getUsername() + " (Profile Missing)");
+                                details.put("id", created.getId());
+                                details.put("name", created.getName());
                                 details.put("username", u.getUsername());
-                                details.put("email", "Profile not configured");
+                                details.put("email", created.getEmail());
+                                details.put("phone", created.getPhone());
                                 details.put("role", role);
                                 return ResponseEntity.ok(details);
                             }

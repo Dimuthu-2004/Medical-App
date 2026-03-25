@@ -40,4 +40,13 @@ public class FileStorageService {
     public Path loadSlip(String filename) {
         return slipUploadPath.resolve(filename);
     }
+
+    public void deleteSlip(String filename) {
+        if (filename == null || filename.isBlank()) return;
+        try {
+            Files.deleteIfExists(slipUploadPath.resolve(filename));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to delete old slip file", e);
+        }
+    }
 }

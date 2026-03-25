@@ -7,7 +7,8 @@ export default defineConfig({
     server: {
         proxy: {
             '/api': {
-                target: 'http://localhost:8088',
+                // Use IPv4 loopback to avoid Windows localhost/IPv6 resolution issues.
+                target: 'http://127.0.0.1:8088',
                 changeOrigin: true,
                 secure: false,
             }

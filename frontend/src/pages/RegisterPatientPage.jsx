@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
+import FaceAuthModal from '../components/FaceAuthModal';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
+import { getPasswordPolicyError } from '../utils/passwordPolicy';
 
 const STEPS = [
     { label: 'Account', icon: '🔐' },
@@ -47,10 +50,10 @@ const Input = ({ label, required, children, style }) => (
 const baseInput = (focused) => ({
     width: '100%',
     padding: '13px 16px',
-    background: focused ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-    border: focused ? '1px solid #3b82f6' : '1px solid rgba(255,255,255,0.08)',
+    background: 'var(--app-surface)',
+    border: focused ? '1px solid #3b82f6' : '1px solid var(--app-border)',
     borderRadius: '14px',
-    color: '#fff',
+    color: 'var(--app-text)',
     fontSize: '0.95rem',
     outline: 'none',
     transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -64,7 +67,7 @@ const selectStyle = (focused) => ({
     ...baseInput(focused),
     cursor: 'pointer',
     appearance: 'none',
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'right 16px center',
 });
@@ -106,6 +109,17 @@ export default function RegisterPage() {
     const [focused, setFocused] = useState('');
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
+    const [showFaceRegister, setShowFaceRegister] = useState(false);
+    const googleEnabled = ((import.meta.env.VITE_GOOGLE_AUTH_ENABLED ?? 'true') !== 'false') || Boolean(window.APP_GOOGLE_AUTH_ENABLED);
+    const resolveBackendOrigin = () => {
+        const envOrigin = import.meta.env.VITE_BACKEND_ORIGIN;
+        if (envOrigin && envOrigin.trim()) return envOrigin.trim().replace(/\/$/, '');
+        const origin = window.location.origin;
+        if (origin.includes('5173')) return origin.replace('5173', '8088');
+        return origin;
+    };
+    const backendOrigin = resolveBackendOrigin();
+    const googleAuthUrl = `${backendOrigin}/auth/google`;
 
     const [form, setForm] = useState({
         username: '', password: '', confirmPassword: '',
@@ -117,12 +131,34 @@ export default function RegisterPage() {
     const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
     const fb = (f) => () => setFocused(f);
     const blur = () => setFocused('');
+    const postLoginAndContinue = (username, password) => {
+        const redirectTo = new URLSearchParams(window.location.search).get('redirectTo') || '/patients/dashboard';
+        const formEl = document.createElement('form');
+        formEl.method = 'POST';
+        formEl.action = '/login';
+
+        const addField = (name, value) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = name;
+            input.value = value;
+            formEl.appendChild(input);
+        };
+
+        addField('username', username);
+        addField('password', password);
+        addField('redirectTo', redirectTo);
+        document.body.appendChild(formEl);
+        formEl.submit();
+    };
 
     const validate = () => {
         const e = {};
         if (step === 0) {
             if (!form.username) e.username = 'Required';
-            if (!form.password) e.password = 'Required';
+            const passwordPolicyError = getPasswordPolicyError(form.password);
+            if (passwordPolicyError) e.password = passwordPolicyError;
+            if (!form.confirmPassword) e.confirmPassword = 'Confirm password is required';
             if (form.password !== form.confirmPassword) e.confirmPassword = 'Passwords do not match';
         }
         if (step === 1) {
@@ -131,6 +167,7 @@ export default function RegisterPage() {
             if (!form.dob) e.dob = 'Required';
             if (!form.gender) e.gender = 'Required';
             if (!form.phone) e.phone = 'Required';
+            if (!form.email) e.email = 'Required';
         }
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -180,10 +217,8 @@ export default function RegisterPage() {
         };
 
         try {
-            await api.post('/register/patient', payload);
-            const redirectTo = new URLSearchParams(window.location.search).get('redirectTo');
-            const loginUrl = redirectTo ? `/login?registered&redirectTo=${encodeURIComponent(redirectTo)}` : '/login?registered';
-            window.location.href = loginUrl;
+            await api.post('/api/auth/register/patient', payload);
+            postLoginAndContinue(form.username, form.password);
         } catch (err) {
             setLoading(false);
             const msg = err.response?.data?.error || 'Registration failed. Please try again.';
@@ -208,6 +243,7 @@ export default function RegisterPage() {
 
     return (
         <div style={styles.body}>
+            <FaceAuthModal isOpen={showFaceRegister} onClose={() => setShowFaceRegister(false)} mode="register" />
             <style>{`
                 option {
                     background-color: #1a1c1e;
@@ -237,6 +273,42 @@ export default function RegisterPage() {
                     </motion.div>
                     <h2 style={styles.title}>Patient Registration</h2>
                     <p style={styles.desc}>Create your personal health profile</p>
+
+                    <div style={{ marginTop: '24px' }}>
+                        <motion.button
+                            type="button" onClick={() => setShowFaceRegister(true)}
+                            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                            style={styles.btnFaceScan}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                                <path d="M5 3q-2 0-2 2v4a1 1 0 002 0V5h4a1 1 0 000-2H5zM19 3q2 0 2 2v4a1 1 0 01-2 0V5h-4a1 1 0 010-2h4zM5 21q-2 0-2-2v-4a1 1 0 012 0v4h4a1 1 0 010 2H5zM19 21q2 0 2-2v-4a1 1 0 00-2 0v4h-4a1 1 0 000 2h4z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        Quick Face Registration
+                        </motion.button>
+
+                        {googleEnabled && (
+                            <motion.a
+                                href={googleAuthUrl}
+                                whileHover={{ scale: 1.02, boxShadow: '0 10px 28px rgba(59,130,246,0.25)' }}
+                                whileTap={{ scale: 0.97 }}
+                                style={{ ...styles.btnGoogle, textDecoration: 'none' }}
+                            >
+                                <svg width="18" height="18" viewBox="0 0 533.5 544.3" aria-hidden="true" style={{ marginRight: 10 }}>
+                                    <path fill="#4285F4" d="M533.5 278.4c0-17.4-1.4-34.1-4.1-50.4H272v95.3h147.3c-6.4 34.7-25.8 64.1-55 83.9v69h88.7c52-47.9 80.5-118.5 80.5-195.1z" />
+                                    <path fill="#34A853" d="M272 544.3c74.7 0 137.4-24.7 183.2-67.1l-88.7-69c-24.6 16.5-56.1 26.2-94.5 26.2-72.7 0-134.3-49-156.3-115.1H24v72.2C69.8 483.9 164.6 544.3 272 544.3z" />
+                                    <path fill="#FBBC04" d="M115.7 319.3c-5.6-16.5-8.8-34.1-8.8-52.3s3.2-35.8 8.8-52.3V142.5H24C8.7 173.7 0 210.2 0 247c0 36.8 8.7 73.3 24 104.5l91.7-71.2z" />
+                                    <path fill="#EA4335" d="M272 109.3c40.6 0 77 14 105.7 41.3l79.2-79.2C409.2 24.5 346.5 0 272 0 164.6 0 69.8 60.4 24 142.5l91.7 71.2C137.7 158.3 199.3 109.3 272 109.3z" />
+                                </svg>
+                                Continue with Google
+                            </motion.a>
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '24px 0 0', opacity: 0.4 }}>
+                            <div style={{ height: 1, background: '#fff', flex: 1 }}></div>
+                            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: 1, fontWeight: '600' }}>Or Manual Registration</span>
+                            <div style={{ height: 1, background: '#fff', flex: 1 }}></div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Stepper */}
@@ -279,6 +351,7 @@ export default function RegisterPage() {
                                     </Input>
                                     <Input label="Password" required>
                                         <input type="password" name="password" value={form.password} onChange={set('password')} onFocus={fb('pass')} onBlur={blur} style={inputStyle(focused === 'pass')} placeholder="••••••••" required />
+                                        <PasswordStrengthMeter password={form.password} />
                                         {errors.password && <span style={styles.err}>{errors.password}</span>}
                                     </Input>
                                     <Input label="Confirm Password" required>
@@ -321,8 +394,9 @@ export default function RegisterPage() {
                                         <input name="phone" value={form.phone} onChange={set('phone')} onFocus={fb('phone')} onBlur={blur} style={inputStyle(focused === 'phone')} placeholder="+94 XX XXX XXXX" required />
                                         {errors.phone && <span style={styles.err}>{errors.phone}</span>}
                                     </Input>
-                                    <Input label="Email">
-                                        <input type="email" name="email" value={form.email} onChange={set('email')} onFocus={fb('email')} onBlur={blur} style={inputStyle(focused === 'email')} placeholder="email@example.com" />
+                                    <Input label="Email" required>
+                                        <input type="email" name="email" value={form.email} onChange={set('email')} onFocus={fb('email')} onBlur={blur} style={inputStyle(focused === 'email')} placeholder="email@example.com" required />
+                                        {errors.email && <span style={styles.err}>{errors.email}</span>}
                                     </Input>
                                     <Input label="Address" style={{ gridColumn: '1 / -1' }}>
                                         <textarea name="address" value={form.address} onChange={set('address')} onFocus={fb('addr')} onBlur={blur} style={textareaStyle(focused === 'addr')} placeholder="Enter your residential address" />
@@ -381,7 +455,7 @@ export default function RegisterPage() {
 const styles = {
     body: {
         minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#0a0a0c', backgroundImage: `radial-gradient(at 0% 0%, rgba(37,99,235,0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(124,58,237,0.15) 0px, transparent 50%)`,
+        background: 'var(--app-bg)', backgroundImage: `radial-gradient(at 0% 0%, rgba(37,99,235,0.08) 0px, transparent 55%), radial-gradient(at 100% 100%, rgba(124,58,237,0.07) 0px, transparent 55%)`,
         fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif", position: 'relative', overflow: 'hidden', padding: '40px 20px',
     },
     meshContainer: { position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, opacity: 0.6, filter: 'blur(80px)' },
@@ -390,9 +464,9 @@ const styles = {
     meshBall3: { position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(16,185,129,0.2)', top: '40%', left: '50%' },
     card: {
         position: 'relative', zIndex: 10, width: '100%', maxWidth: '640px', padding: '3rem',
-        background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(30px) saturate(150%)',
-        borderRadius: '32px', border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 40px 100px rgba(0,0,0,0.5)', overflow: 'visible',
+        background: 'var(--app-surface)', backdropFilter: 'blur(10px) saturate(120%)',
+        borderRadius: '32px', border: '1px solid var(--app-border)',
+        boxShadow: '0 25px 50px -12px rgba(2, 6, 23, 0.16)', overflow: 'visible',
     },
     header: { textAlign: 'center', marginBottom: '2.5rem' },
     iconWrap: {
@@ -400,10 +474,10 @@ const styles = {
         borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
         margin: '0 auto 1.2rem', boxShadow: '0 12px 30px rgba(37,99,235,0.35)',
     },
-    title: { fontSize: '2rem', fontWeight: '800', color: '#fff', margin: 0, letterSpacing: '-0.5px' },
-    desc: { color: 'rgba(255,255,255,0.5)', fontSize: '1rem', marginTop: 8 },
+    title: { fontSize: '2rem', fontWeight: '800', color: 'var(--app-text)', margin: 0, letterSpacing: '-0.5px' },
+    desc: { color: 'var(--app-muted)', fontSize: '1rem', marginTop: 8 },
     stepper: { position: 'relative', display: 'flex', justifyContent: 'space-between', marginBottom: '3rem', padding: '0 10px' },
-    stepperLine: { position: 'absolute', top: 21, left: '10%', right: '10%', height: 2, background: 'rgba(255,255,255,0.08)', zIndex: 0 },
+    stepperLine: { position: 'absolute', top: 21, left: '10%', right: '10%', height: 2, background: 'var(--app-border)', zIndex: 0 },
     stepperProgress: { position: 'absolute', top: 21, left: '10%', height: 2, background: 'linear-gradient(90deg, #2563eb, #60a5fa)', zIndex: 0, transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)' },
     stepItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, zIndex: 1 },
     stepCircle: {
@@ -414,7 +488,7 @@ const styles = {
     formSection: { width: '100%' },
     grid2: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '16px' },
     fieldWrap: { display: 'flex', flexDirection: 'column', gap: 6 },
-    label: { fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', fontWeight: '600', marginLeft: 4 },
+    label: { fontSize: '0.85rem', color: 'var(--app-muted)', fontWeight: '600', marginLeft: 4 },
     err: { fontSize: '0.75rem', color: '#f87171', marginTop: 4, fontWeight: '500' },
     navRow: { display: 'flex', marginTop: '2.5rem', gap: 12 },
     btnPrimary: {
@@ -428,6 +502,19 @@ const styles = {
     btnSecondary: {
         padding: '14px 24px', background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.8)',
         border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px', fontWeight: '600', cursor: 'pointer',
+    },
+    btnFaceScan: {
+        padding: '12px 24px', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa',
+        border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '14px', fontWeight: '600',
+        fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+        justifyContent: 'center', transition: 'all 0.2s', boxShadow: '0 8px 16px rgba(59, 130, 246, 0.1)'
+    },
+    btnGoogle: {
+        padding: '12px 24px', background: '#ffffff', color: '#0f172a',
+        border: '1px solid rgba(59, 130, 246, 0.35)', borderRadius: '14px', fontWeight: '700',
+        fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+        justifyContent: 'center', transition: 'all 0.2s', boxShadow: '0 10px 24px rgba(59, 130, 246, 0.15)',
+        width: '100%', marginTop: 10,
     },
     footer: { marginTop: '2.5rem', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.06)', textAlign: 'center' },
     roleHeader: { color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginBottom: 12 },

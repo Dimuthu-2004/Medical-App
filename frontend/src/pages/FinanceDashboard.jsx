@@ -10,11 +10,13 @@ import {
     Check,
     ArrowLeft,
     Search,
-    Filter
+    Filter,
+    FileText,
+    LogOut
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-import AdminLayout from './AdminLayout';
+import FinanceLayout from './FinanceLayout';
 
 const AnimatedCounter = ({ value, prefix = "", delay = 0 }) => {
     const [displayValue, setDisplayValue] = useState(0);
@@ -136,15 +138,15 @@ const FinanceDashboard = () => {
     });
 
     if (loading) return (
-        <AdminLayout>
+        <FinanceLayout>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b' }}>
                 Loading Finance Data...
             </div>
-        </AdminLayout>
+        </FinanceLayout>
     );
 
     return (
-        <AdminLayout>
+        <FinanceLayout>
             <div style={S.wrapper}>
                 {/* Header */}
                 <motion.div
@@ -152,8 +154,11 @@ const FinanceDashboard = () => {
                     animate={{ opacity: 1, x: 0 }}
                     style={S.header}
                 >
-                    <h1 style={S.title}>Finance Dashboard</h1>
-                    <p style={S.subtitle}>Revenue oversight and payment verification</p>
+                    <div>
+                        <h1 style={S.title}>Finance Dashboard</h1>
+                        <p style={S.subtitle}>Revenue oversight and payment verification</p>
+                    </div>
+                    <a href="/logout" style={S.logoutBtn}><LogOut size={16} /> Logout</a>
                 </motion.div>
 
                 {/* Stats Grid */}
@@ -263,7 +268,7 @@ const FinanceDashboard = () => {
                                             </td>
                                             <td style={S.td}>
                                                 <div
-                                                    onClick={() => handleUpdatePayment(appt.id, appt.paymentAmount, !appt.paid)}
+                                                    onClick={() => handleUpdatePayment(appt.id, appt.paymentAmount || 1500, !appt.paid)}
                                                     style={{
                                                         ...S.statusBadge,
                                                         backgroundColor: appt.paid ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
@@ -274,25 +279,24 @@ const FinanceDashboard = () => {
                                                     {appt.paid ? 'PAID' : 'PENDING'}
                                                 </div>
                                             </td>
-                                            <td style={S.td}>
+                                            <td style={S.td} title={appt.paymentSlipPath || 'No slip uploaded'}>
                                                 {appt.paymentSlipPath ? (
                                                     <div style={S.slipActions}>
                                                         <a
                                                             href={`/api/finance/slips/${appt.paymentSlipPath}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
-                                                            style={S.iconBtn}
-                                                            title="View Slip"
+                                                            style={S.slipLink}
                                                         >
-                                                            <Eye size={16} />
+                                                            <Eye size={14} /> <span>View Slip</span>
                                                         </a>
                                                         {!appt.paid && (
                                                             <button
                                                                 onClick={() => handleVerifySlip(appt.id)}
-                                                                style={{ ...S.iconBtn, color: '#10b981' }}
-                                                                title="Verify Slip"
+                                                                style={S.verifyBtn}
+                                                                title="Verify and Mark as Paid"
                                                             >
-                                                                <Check size={16} />
+                                                                <Check size={14} />
                                                             </button>
                                                         )}
                                                     </div>
@@ -301,12 +305,22 @@ const FinanceDashboard = () => {
                                                 )}
                                             </td>
                                             <td style={S.td}>
-                                                <a
-                                                    href={`/finance/bill/download/${appt.id}`}
-                                                    style={S.downloadBtn}
-                                                >
-                                                    <Download size={14} /> Bill
-                                                </a>
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    <a
+                                                        href={`/api/finance/bill/download/${appt.id}`}
+                                                        style={S.downloadBtn}
+                                                        download
+                                                    >
+                                                        <Download size={14} /> PDF
+                                                    </a>
+                                                    <a
+                                                        href={`/api/finance/bill/download/text/${appt.id}`}
+                                                        style={{ ...S.downloadBtn, background: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa', borderColor: 'rgba(59, 130, 246, 0.2)' }}
+                                                        download
+                                                    >
+                                                        <FileText size={14} /> TXT
+                                                    </a>
+                                                </div>
                                             </td>
                                         </motion.tr>
                                     ))}
@@ -316,18 +330,18 @@ const FinanceDashboard = () => {
                     </div>
                 </motion.div>
             </div>
-        </AdminLayout>
+        </FinanceLayout>
     );
 };
 
 const LoadingSkeleton = () => (
     <div style={S.container}>
         <div style={S.wrapper}>
-            <div style={{ height: 100, background: 'rgba(255,255,255,0.05)', borderRadius: 24, marginBottom: 30 }} className="skeleton-pulse" />
+            <div style={{ height: 100, background: '#f1f5f9', borderRadius: 24, marginBottom: 30 }} className="skeleton-pulse" />
             <div style={S.statsGrid}>
-                {[1, 2, 3].map(i => <div key={i} style={{ height: 120, background: 'rgba(255,255,255,0.05)', borderRadius: 24 }} className="skeleton-pulse" />)}
+                {[1, 2, 3].map(i => <div key={i} style={{ height: 120, background: '#f1f5f9', borderRadius: 24 }} className="skeleton-pulse" />)}
             </div>
-            <div style={{ height: 500, background: 'rgba(255,255,255,0.05)', borderRadius: 32 }} className="skeleton-pulse" />
+            <div style={{ height: 500, background: '#f1f5f9', borderRadius: 32 }} className="skeleton-pulse" />
         </div>
         <style>{`
             @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 0.3; } 100% { opacity: 0.6; } }
@@ -337,49 +351,58 @@ const LoadingSkeleton = () => (
 );
 
 const S = {
-    layout: { minHeight: '100vh', background: 'radial-gradient(circle at top right, #1e293b, #0f172a)', padding: '1.5rem 2rem', fontFamily: 'Inter, system-ui, sans-serif', color: '#f8fafc' },
+    layout: {
+        minHeight: '100vh',
+        background: 'linear-gradient(180deg, #eaf3ff 0%, #f3f8ff 52%, #f8fbff 100%)',
+        padding: '1.5rem 2rem',
+        fontFamily: 'Inter, system-ui, sans-serif',
+        color: '#0f172a'
+    },
     wrapper: { maxWidth: '1200px', margin: '0 auto', padding: '1rem 0' },
-    header: { marginBottom: '2rem' },
-    title: { margin: 0, fontSize: '2.5rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', textShadow: '0 2px 10px rgba(0,0,0,0.3)' },
-    subtitle: { color: '#94a3b8', fontSize: '1.1rem', margin: '0.25rem 0 0' },
+    header: { marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' },
+    title: { margin: 0, fontSize: '2.5rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', textShadow: 'none' },
+    subtitle: { color: '#64748b', fontSize: '1.1rem', margin: '0.25rem 0 0' },
+    logoutBtn: { marginLeft: 'auto', display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.10)', color: '#ef4444', padding: '10px 16px', borderRadius: 12, textDecoration: 'none', fontWeight: 700, border: '1px solid rgba(239,68,68,0.20)' },
 
     statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' },
-    statCard: { background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '24px', padding: '1.75rem', display: 'flex', alignItems: 'center', gap: '1.5rem', transition: 'all 0.3s' },
+    statCard: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '24px', padding: '1.75rem', display: 'flex', alignItems: 'center', gap: '1.5rem', transition: 'all 0.3s', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' },
     statIcon: { width: '56px', height: '56px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    statLabel: { color: '#94a3b8', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' },
-    statValue: { fontSize: '1.75rem', fontWeight: 800, marginTop: '2px', color: '#fff' },
+    statLabel: { color: '#64748b', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' },
+    statValue: { fontSize: '1.75rem', fontWeight: 800, marginTop: '2px', color: '#0f172a' },
 
-    mainCard: { background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '32px', padding: '2rem' },
+    mainCard: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '32px', padding: '2rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.05)' },
 
     toolbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', gap: '1.5rem', flexWrap: 'wrap' },
     searchWrapper: { position: 'relative', flex: 1, minWidth: '300px' },
     searchIcon: { position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' },
-    searchInput: { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '12px 16px 12px 48px', color: '#fff', fontSize: '1rem', outline: 'none', transition: 'all 0.2s' },
+    searchInput: { width: '100%', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '12px 16px 12px 48px', color: '#0f172a', fontSize: '1rem', outline: 'none', transition: 'all 0.2s', outlineColor: '#3b82f6' },
 
-    filterGroup: { display: 'flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)' },
-    filterTab: { padding: '8px 20px', borderRadius: '10px', border: 'none', background: 'transparent', color: '#94a3b8', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem', transition: 'all 0.2s' },
-    filterTabActive: { background: 'rgba(37,99,235,0.2)', color: '#3b82f6', border: '1px solid rgba(37,99,235,0.3)' },
+    filterGroup: { display: 'flex', background: '#f8fafc', padding: '4px', borderRadius: '14px', border: '1px solid #e2e8f0' },
+    filterTab: { padding: '8px 20px', borderRadius: '10px', border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem', transition: 'all 0.2s' },
+    filterTabActive: { background: '#dbeafe', color: '#2563eb', border: '1px solid #bfdbfe' },
 
     tableWrapper: { overflowX: 'auto' },
     table: { width: '100%', borderCollapse: 'separate', borderSpacing: '0 8px' },
     th: { textAlign: 'left', padding: '12px 20px', color: '#64748b', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' },
-    tr: { background: 'rgba(255,255,255,0.02)', transition: 'all 0.2s' },
-    td: { padding: '16px 20px', color: '#cbd5e1', fontSize: '0.95rem', borderBottom: '1px solid rgba(255,255,255,0.03)' },
+    tr: { background: '#ffffff', border: '1px solid #e2e8f0', transition: 'all 0.2s' },
+    td: { padding: '16px 20px', color: '#334155', fontSize: '0.95rem', borderBottom: '1px solid #f1f5f9' },
 
-    idBadge: { background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '8px', fontSize: '0.8rem', color: '#94a3b8', fontWeight: 700, border: '1px solid rgba(255,255,255,0.1)' },
-    patientCell: { display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, color: '#f1f5f9' },
-    avatar: { width: '32px', height: '32px', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', color: 'white', fontWeight: 800 },
+    idBadge: { background: '#f1f5f9', padding: '4px 10px', borderRadius: '8px', fontSize: '0.8rem', color: '#475569', fontWeight: 700, border: '1px solid #e2e8f0' },
+    patientCell: { display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, color: '#0f172a' },
+    avatar: { width: '32px', height: '32px', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.9rem', color: 'white', fontWeight: 800 },
     dateCell: { color: '#64748b', fontSize: '0.9rem' },
 
-    amountInput: { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '6px 12px', color: '#fff', width: '120px', outline: 'none', textAlign: 'right', fontWeight: 700 },
+    amountInput: { background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '6px 12px', color: '#0f172a', width: '120px', outline: 'none', textAlign: 'right', fontWeight: 700, outlineColor: '#3b82f6' },
 
     statusBadge: { display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s', border: '1px solid currentColor' },
 
     slipActions: { display: 'flex', gap: '8px' },
-    iconBtn: { width: '36px', height: '36px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', textDecoration: 'none', cursor: 'pointer', transition: 'all 0.2s' },
+    slipLink: { display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: '#dbeafe', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 700, textDecoration: 'none', transition: 'all 0.2s' },
+    verifyBtn: { width: '32px', height: '32px', background: '#d1fae5', border: '1px solid #a7f3d0', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669', cursor: 'pointer', transition: 'all 0.2s' },
+    iconBtn: { width: '36px', height: '36px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', textDecoration: 'none', cursor: 'pointer', transition: 'all 0.2s' },
 
-    downloadBtn: { display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', padding: '8px 16px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 800, textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(16,185,129,0.2)' },
-    noneText: { color: '#64748b', fontSize: '0.85rem', fontStyle: 'italic' }
+    downloadBtn: { display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#d1fae5', color: '#059669', padding: '8px 16px', borderRadius: '100px', fontSize: '0.8rem', fontWeight: 800, textDecoration: 'none', transition: 'all 0.2s', border: '1px solid #a7f3d0' },
+    noneText: { color: '#94a3b8', fontSize: '0.85rem', fontStyle: 'italic' }
 };
 
 export default FinanceDashboard;

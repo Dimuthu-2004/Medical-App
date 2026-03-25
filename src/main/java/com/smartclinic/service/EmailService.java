@@ -7,20 +7,14 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
-import org.springframework.scheduling.annotation.Async;
-import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
-
-    public EmailService(JavaMailSender mailSender, TemplateEngine templateEngine) {
-        this.mailSender = mailSender;
-        this.templateEngine = templateEngine;
-    }
 
     private boolean isValidEmail(String email) {
         if (email == null || email.trim().isEmpty())
@@ -29,7 +23,6 @@ public class EmailService {
         return java.util.regex.Pattern.compile(emailRegex).matcher(email.trim()).matches();
     }
 
-    @Async
     public void sendSimpleEmail(String to, String subject, String text) {
         if (!isValidEmail(to)) {
             System.err.println("EMAIL SERVICE: Skipping send. Invalid or non-email identifier: " + to);
@@ -44,15 +37,15 @@ public class EmailService {
             mailSender.send(message);
             System.out.println("EMAIL SERVICE: Simple email sent successfully to " + to);
         } catch (Exception e) {
-            System.err.println(
-                    "EMAIL SERVICE ERROR: Could not send simple email to " + to + ". Reason: " + e.getMessage());
+            System.err.println("EMAIL SERVICE ERROR: Failed to send simple email to " + to);
+            e.printStackTrace();
         }
     }
 
-    @Async
     public void sendHtmlEmail(String to, String subject, String templateName, Context context) {
-        if (!isValidEmail(to)) {
-            System.err.println("EMAIL SERVICE: Skipping HTML send. Invalid or non-email identifier: " + to);
+        System.out.println("EMAIL SERVICE: Attempting to send " + templateName + " email to: [" + to + "]");
+        if (to == null || to.trim().isEmpty()) {
+            System.err.println("EMAIL SERVICE: Skipping HTML send. Reason: Recipient email is null or empty");
             return;
         }
         try {
@@ -68,9 +61,9 @@ public class EmailService {
             mailSender.send(message);
             System.out.println("EMAIL SERVICE: HTML email (" + templateName + ") sent successfully to " + to);
         } catch (Exception e) {
-            System.err
-                    .println("EMAIL SERVICE ERROR: Could not send HTML email to " + to + ". Reason: " + e.getMessage());
-            // No longer throwing RuntimeException to avoid blocking the main thread/caller
+            System.err.println("EMAIL SERVICE ERROR: Failed to send HTML email to " + to);
+            e.printStackTrace();
+            throw new RuntimeException("Failed to send HTML email", e);
         }
     }
 }

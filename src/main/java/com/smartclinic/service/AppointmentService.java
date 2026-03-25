@@ -55,19 +55,21 @@ public class AppointmentService {
         // Generate token if new appointment
         if (appointment.getId() == null) {
             // Check capacity
-            long count = appointmentRepository.countByAppointmentDateAndSessionType(
+            long count = appointmentRepository.countByDoctorAndAppointmentDateAndSessionType(
+                    appointment.getDoctor(),
                     appointment.getAppointmentDate(),
                     appointment.getSessionType());
             if (count >= 50) {
                 throw new RuntimeException("This session is full (Max 50 patients).");
             }
 
-            // Check duplicate booking
-            if (appointmentRepository.existsByPatientAndAppointmentDateAndSessionType(
+            // Check duplicate booking (same doctor in same session)
+            if (appointmentRepository.existsByPatientAndDoctorAndAppointmentDateAndSessionType(
                     appointment.getPatient(),
+                    appointment.getDoctor(),
                     appointment.getAppointmentDate(),
                     appointment.getSessionType())) {
-                throw new RuntimeException("You already have an appointment for this session.");
+                throw new RuntimeException("You already have an appointment with this doctor for this session.");
             }
 
             appointment.setTokenNumber((int) count + 1);

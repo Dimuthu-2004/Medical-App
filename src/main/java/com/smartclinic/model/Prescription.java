@@ -1,11 +1,15 @@
 package com.smartclinic.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -39,4 +43,17 @@ public class Prescription {
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate date;
+
+    private Boolean dispensed = false;
+
+    private LocalDateTime dispensedAt;
+
+    private Boolean deletedByPatient = false;
+
+    private LocalDateTime deletedByPatientAt;
+
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("id ASC")
+    @JsonManagedReference
+    private List<PrescriptionItem> items = new ArrayList<>();
 }

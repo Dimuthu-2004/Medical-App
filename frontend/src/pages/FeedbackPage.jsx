@@ -116,7 +116,7 @@ export default function FeedbackPage() {
                 {feedbacks.length === 0 ? (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={S.emptyState}>
                         <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>⭐</div>
-                        <h2 style={{ color: '#f8fafc', marginBottom: '0.5rem' }}>No Completed Appointments</h2>
+                        <h2 style={{ color: 'var(--app-text)', marginBottom: '0.5rem' }}>No Completed Appointments</h2>
                         <p style={{ color: '#64748b' }}>Submit feedback after your appointment is completed.</p>
                         <a href="/appointments/add" style={S.bookBtn}>Book an Appointment</a>
                     </motion.div>
@@ -261,50 +261,50 @@ export default function FeedbackPage() {
 }
 
 const LoadingScreen = () => (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0f172a', color: '#64748b' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--app-bg)', color: 'var(--app-muted)' }}>
         Loading feedback...
     </div>
 );
 
 const S = {
-    container: { minHeight: '100vh', background: 'radial-gradient(circle at bottom right, #312e81, #0f172a)', padding: '2rem 1.5rem', fontFamily: 'Inter,system-ui,sans-serif' },
+    container: { minHeight: '100vh', background: 'var(--app-bg)', padding: '2rem 1.5rem', fontFamily: 'Inter,system-ui,sans-serif', color: 'var(--app-text)' },
     wrapper: { maxWidth: '860px', margin: '0 auto' },
     header: { display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2.5rem', flexWrap: 'wrap' },
-    backBtn: { display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', textDecoration: 'none', fontWeight: 700, padding: '8px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 },
-    title: { margin: 0, fontSize: '1.8rem', fontWeight: 900, color: '#f8fafc' },
-    subtitle: { margin: '4px 0 0', color: '#64748b', fontSize: '0.9rem' },
+    backBtn: { display: 'flex', alignItems: 'center', gap: 8, color: '#334155', textDecoration: 'none', fontWeight: 700, padding: '8px 16px', borderRadius: 10, background: 'var(--app-surface)', border: '1px solid var(--app-border)', flexShrink: 0 },
+    title: { margin: 0, fontSize: '1.8rem', fontWeight: 900, color: 'var(--app-text)' },
+    subtitle: { margin: '4px 0 0', color: 'var(--app-muted)', fontSize: '0.9rem' },
     logoutBtn: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', color: '#f87171', padding: '8px 18px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem', border: '1px solid rgba(239,68,68,0.15)' },
 
-    emptyState: { textAlign: 'center', padding: '5rem 2rem', background: 'rgba(255,255,255,0.03)', borderRadius: 28, border: '1px solid rgba(255,255,255,0.06)' },
+    emptyState: { textAlign: 'center', padding: '5rem 2rem', background: 'var(--app-surface)', borderRadius: 28, border: '1px solid var(--app-border)' },
     bookBtn: { display: 'inline-block', marginTop: '1.5rem', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', padding: '12px 28px', borderRadius: 14, textDecoration: 'none', fontWeight: 800 },
 
     list: { display: 'flex', flexDirection: 'column', gap: '1rem' },
-    card: { background: 'rgba(255,255,255,0.04)', borderRadius: 22, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' },
+    card: { background: 'var(--app-surface)', borderRadius: 22, border: '1px solid var(--app-border)', overflow: 'hidden' },
     cardTop: { display: 'flex', alignItems: 'center', gap: '1rem', padding: '1.25rem 1.5rem' },
     tokenBadge: { width: 46, height: 46, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 900, flexShrink: 0 },
     apptInfo: { flex: 1 },
-    docName: { color: '#f1f5f9', fontWeight: 700, fontSize: '1rem' },
-    apptDate: { color: '#64748b', fontSize: '0.82rem', marginTop: 3 },
+    docName: { color: 'var(--app-text)', fontWeight: 700, fontSize: '1rem' },
+    apptDate: { color: 'var(--app-muted)', fontSize: '0.82rem', marginTop: 3 },
     statusTag: { padding: '4px 14px', borderRadius: 100, fontSize: '0.75rem', fontWeight: 800, flexShrink: 0 },
 
-    feedbackDisplay: { padding: '1rem 1.5rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.05)' },
-    feedComment: { color: '#cbd5e1', fontSize: '0.95rem', margin: '0.75rem 0', lineHeight: 1.6 },
+    feedbackDisplay: { padding: '1rem 1.5rem 1.25rem', borderTop: '1px solid var(--app-border)' },
+    feedComment: { color: '#334155', fontSize: '0.95rem', margin: '0.75rem 0', lineHeight: 1.6 },
     feedActions: { display: 'flex', gap: '0.5rem' },
     editBtn: { display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(59,130,246,0.1)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', padding: '6px 14px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' },
     deleteBtn: { display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', padding: '6px 14px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: '0.8rem' },
 
     adminReplyBox: { marginTop: '0.75rem' },
     adminReplyToggle: { display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(16,185,129,0.08)', color: '#10b981', border: 'none', padding: '8px 14px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' },
-    adminReplyText: { padding: '0.75rem 1rem', color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, background: 'rgba(255,255,255,0.02)', borderRadius: '0 0 10px 10px', overflow: 'hidden' },
+    adminReplyText: { padding: '0.75rem 1rem', color: '#475569', fontSize: '0.9rem', lineHeight: 1.6, background: 'var(--app-bg-muted)', borderRadius: '0 0 10px 10px', overflow: 'hidden' },
 
-    feedForm: { padding: '1rem 1.5rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', overflow: 'hidden' },
+    feedForm: { padding: '1rem 1.5rem 1.5rem', borderTop: '1px solid var(--app-border)', overflow: 'hidden' },
     formRow: { marginBottom: '1rem' },
-    label: { display: 'block', color: '#64748b', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 },
-    textarea: { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '10px 14px', color: '#f8fafc', fontSize: '0.95rem', outline: 'none', resize: 'vertical', minHeight: 80, fontFamily: 'inherit', boxSizing: 'border-box' },
+    label: { display: 'block', color: '#475569', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 },
+    textarea: { width: '100%', background: 'var(--app-bg)', border: '1px solid var(--app-border)', borderRadius: 12, padding: '10px 14px', color: 'var(--app-text)', fontSize: '0.95rem', outline: 'none', resize: 'vertical', minHeight: 80, fontFamily: 'inherit', boxSizing: 'border-box' },
     submitBtn: { display: 'flex', alignItems: 'center', gap: 8, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 12, padding: '10px 22px', cursor: 'pointer', fontWeight: 800, fontSize: '0.9rem' },
-    cancelBtn: { background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 22px', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' },
+    cancelBtn: { background: 'var(--app-surface)', color: '#334155', border: '1px solid var(--app-border)', borderRadius: 12, padding: '10px 22px', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' },
 
-    addFeedbackBtn: { display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'rgba(251,191,36,0.06)', border: '1px dashed rgba(251,191,36,0.25)', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#fbbf24', padding: '1rem 1.5rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' },
+    addFeedbackBtn: { display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'rgba(251,191,36,0.06)', border: '1px dashed rgba(251,191,36,0.25)', borderTop: '1px solid var(--app-border)', color: '#b45309', padding: '1rem 1.5rem', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' },
 
     successOverlay: { position: 'absolute', inset: 0, background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: 22 },
     successContent: { textAlign: 'center', color: '#fff' },

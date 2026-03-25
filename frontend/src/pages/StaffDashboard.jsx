@@ -38,7 +38,7 @@ export default function StaffDashboard() {
         }
     };
 
-    if (loading) return <div style={S.container}><p style={{ color: '#fff' }}>Loading...</p></div>;
+    if (loading) return <div style={S.container}><p style={{ color: '#64748b', textAlign: 'center' }}>Loading...</p></div>;
 
     return (
         <div style={S.container}>
@@ -84,7 +84,7 @@ export default function StaffDashboard() {
                                 onClick={handleToggleAvailability}
                                 style={{
                                     ...S.toggleBtn,
-                                    background: available ? '#10b981' : 'rgba(255,255,255,0.1)',
+                                    background: available ? '#10b981' : '#cbd5e1',
                                     justifyContent: available ? 'flex-end' : 'flex-start'
                                 }}
                             >
@@ -118,25 +118,30 @@ export default function StaffDashboard() {
 }
 
 const S = {
-    container: { minHeight: '100vh', background: 'radial-gradient(circle at top right, #1e293b, #0f172a)', padding: '2rem 1.5rem', fontFamily: 'Inter,sans-serif' },
+    container: {
+        minHeight: '100vh',
+        background: 'linear-gradient(180deg, #eaf3ff 0%, #f3f8ff 52%, #f8fbff 100%)',
+        padding: '2rem 1.5rem',
+        fontFamily: 'Inter, system-ui, sans-serif'
+    },
     wrapper: { maxWidth: '1000px', margin: '0 auto' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' },
-    title: { margin: 0, fontSize: '2.5rem', fontWeight: 900, color: '#f8fafc', background: 'linear-gradient(135deg, #f8fafc, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
+    title: { margin: 0, fontSize: '2.5rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' },
     subtitle: { margin: '4px 0 0', color: '#64748b', fontSize: '1rem' },
-    logoutBtn: { display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(239,68,68,0.1)', color: '#f87171', padding: '10px 20px', borderRadius: 12, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', border: '1px solid rgba(239,68,68,0.2)', transition: '0.2s' },
+    logoutBtn: { display: 'flex', alignItems: 'center', gap: 8, background: '#fee2e2', color: '#ef4444', padding: '10px 20px', borderRadius: 12, textDecoration: 'none', fontWeight: 700, fontSize: '0.9rem', border: '1px solid #fecaca', transition: '0.2s' },
 
     grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' },
-    card: { background: 'rgba(255,255,255,0.03)', borderRadius: 24, padding: '2rem', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)' },
+    card: { background: '#ffffff', borderRadius: 24, padding: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' },
     cardHeader: { display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' },
     iconBox: { width: 50, height: 50, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    cardTitle: { margin: 0, color: '#f8fafc', fontSize: '1.25rem', fontWeight: 800 },
-    cardText: { color: '#94a3b8', lineHeight: 1.6, marginBottom: '2rem' },
+    cardTitle: { margin: 0, color: '#0f172a', fontSize: '1.25rem', fontWeight: 800 },
+    cardText: { color: '#64748b', lineHeight: 1.6, marginBottom: '2rem' },
 
-    toggleWrapper: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: 16 },
+    toggleWrapper: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f1f5f9', borderRadius: 16, border: '1px solid #e2e8f0' },
     statusLabel: { fontWeight: 700, fontSize: '0.9rem' },
     toggleBtn: { width: 56, height: 30, borderRadius: 100, border: 'none', padding: 4, cursor: 'pointer', display: 'flex', alignItems: 'center', transition: 'background 0.3s' },
     toggleCircle: { width: 22, height: 22, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' },
 
     list: { listStyle: 'none', padding: 0, margin: 0 },
-    listItem: { display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#cbd5e1', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)', fontWeight: 500 },
+    listItem: { display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#475569', padding: '12px 0', borderBottom: '1px solid #e2e8f0', fontWeight: 500 },
 };

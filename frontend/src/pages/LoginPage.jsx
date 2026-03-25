@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import FaceAuthModal from '../components/FaceAuthModal';
+import api from '../services/api';
+
 
 // Floating particle component
 const Particle = ({ style }) => (
@@ -7,8 +11,8 @@ const Particle = ({ style }) => (
         style={{
             position: 'absolute',
             borderRadius: '50%',
-            background: style.color || 'rgba(59, 130, 246, 0.4)',
-            boxShadow: `0 0 15px ${style.color || 'rgba(59, 130, 246, 0.2)'}`,
+            background: style.color || 'rgba(59, 130, 246, 0.1)',
+            boxShadow: `0 0 15px ${style.color || 'rgba(59, 130, 246, 0.05)'}`,
             ...style,
         }}
         animate={{
@@ -26,24 +30,79 @@ const Particle = ({ style }) => (
 );
 
 const LoginPage = () => {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [focused, setFocused] = useState('');
+    const [showFaceLogin, setShowFaceLogin] = useState(false);
+    const googleEnabled = ((import.meta.env.VITE_GOOGLE_AUTH_ENABLED ?? 'true') !== 'false') || Boolean(window.APP_GOOGLE_AUTH_ENABLED);
+    const resolveBackendOrigin = () => {
+        const envOrigin = import.meta.env.VITE_BACKEND_ORIGIN;
+        if (envOrigin && envOrigin.trim()) return envOrigin.trim().replace(/\/$/, '');
+        const origin = window.location.origin;
+        if (origin.includes('5173')) return origin.replace('5173', '8088');
+        return origin;
+    };
+    const backendOrigin = resolveBackendOrigin();
+    const googleAuthUrl = `${backendOrigin}/auth/google?redirectTo=${encodeURIComponent('/patients/dashboard')}`;
 
     const params = new URLSearchParams(window.location.search);
     const hasError = params.has('error');
+    const oauthErrorRaw = params.get('oauthError');
+    const hasOauthError = Boolean(oauthErrorRaw);
+    const oauthErrorMessage = (() => {
+        if (!oauthErrorRaw) return '';
+        const decoded = decodeURIComponent(oauthErrorRaw);
+        const short = decoded.split(':')[0];
+        if (short === 'NO_AUTH_IN_POST_LOGIN') return 'Google login finished but session was not established.';
+        if (short === 'OAuth2AuthenticationException') return 'Google login failed in OAuth processing.';
+        return 'Google sign-in failed. Please try again.';
+    })();
     const hasLogout = params.has('logout');
     const hasRegistered = params.has('registered');
     const hasResetSuccess = params.has('resetSuccess');
 
+    useEffect(() => {
+        let active = true;
+
+        const redirectIfAuthenticated = async () => {
+            try {
+                const response = await api.get('/api/auth/user');
+                if (!active || !response?.data) return;
+
+                const role = (response.data.role || '').toString().toUpperCase();
+                if (role === 'PATIENT') {
+                    navigate('/patients/dashboard', { replace: true });
+                } else if (role === 'ADMIN') {
+                    navigate('/admin/dashboard', { replace: true });
+                } else if (role === 'DOCTOR') {
+                    navigate('/doctor/dashboard', { replace: true });
+                } else if (role === 'FINANCE_MANAGER' || role === 'PAYMENT_MANAGER') {
+                    navigate('/finance/dashboard', { replace: true });
+                } else if (role === 'PHARMACIST') {
+                    navigate('/pharmacy/dashboard', { replace: true });
+                } else if (role === 'NURSE' || role === 'STAFF' || role === 'LAB_TECH') {
+                    navigate('/staff/dashboard', { replace: true });
+                }
+            } catch (_) {
+                // Not authenticated. Stay on login page.
+            }
+        };
+
+        redirectIfAuthenticated();
+        return () => {
+            active = false;
+        };
+    }, [navigate]);
+
     const particles = [
-        { width: 80, height: 80, top: '10%', left: '5%', duration: 5, delay: 0, color: 'rgba(37, 99, 235, 0.35)' },
-        { width: 50, height: 50, top: '70%', left: '10%', duration: 7, delay: 1, color: 'rgba(124, 58, 237, 0.3)' },
-        { width: 120, height: 120, top: '20%', right: '8%', duration: 6, delay: 2, color: 'rgba(59, 130, 246, 0.25)' },
-        { width: 40, height: 40, top: '80%', right: '15%', duration: 4, delay: 0.5, color: 'rgba(139, 92, 246, 0.4)' },
-        { width: 60, height: 60, top: '50%', left: '3%', duration: 8, delay: 1.5, color: 'rgba(37, 99, 235, 0.2)' },
-        { width: 90, height: 90, top: '5%', left: '40%', duration: 5.5, delay: 3, color: 'rgba(124, 58, 237, 0.25)' },
-        { width: 30, height: 30, bottom: '10%', left: '30%', duration: 6, delay: 2, color: 'rgba(59, 130, 246, 0.4)' },
-        { width: 70, height: 70, bottom: '20%', right: '5%', duration: 4.5, delay: 1, color: 'rgba(139, 92, 246, 0.3)' },
+        { width: 80, height: 80, top: '10%', left: '5%', duration: 5, delay: 0, color: 'rgba(37, 99, 235, 0.15)' },
+        { width: 50, height: 50, top: '70%', left: '10%', duration: 7, delay: 1, color: 'rgba(124, 58, 237, 0.1)' },
+        { width: 120, height: 120, top: '20%', right: '8%', duration: 6, delay: 2, color: 'rgba(59, 130, 246, 0.1)' },
+        { width: 40, height: 40, top: '80%', right: '15%', duration: 4, delay: 0.5, color: 'rgba(139, 92, 246, 0.15)' },
+        { width: 60, height: 60, top: '50%', left: '3%', duration: 8, delay: 1.5, color: 'rgba(37, 99, 235, 0.1)' },
+        { width: 90, height: 90, top: '5%', left: '40%', duration: 5.5, delay: 3, color: 'rgba(124, 58, 237, 0.1)' },
+        { width: 30, height: 30, bottom: '10%', left: '30%', duration: 6, delay: 2, color: 'rgba(59, 130, 246, 0.15)' },
+        { width: 70, height: 70, bottom: '20%', right: '5%', duration: 4.5, delay: 1, color: 'rgba(139, 92, 246, 0.1)' },
     ];
 
     const fieldVariants = {
@@ -57,6 +116,7 @@ const LoginPage = () => {
 
     return (
         <div style={styles.body}>
+            <FaceAuthModal isOpen={showFaceLogin} onClose={() => setShowFaceLogin(false)} mode="login" />
             {/* Animated particles */}
             {particles.map((p, i) => <Particle key={i} style={p} />)}
 
@@ -105,7 +165,7 @@ const LoginPage = () => {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.35, duration: 0.5 }}
                     style={styles.subtitle}
-                >Access your healthcare portal</motion.p>
+                >Sign in to your medical centre portal</motion.p>
 
                 {/* Alerts with animation */}
                 <AnimatePresence>
@@ -117,7 +177,18 @@ const LoginPage = () => {
                             transition={{ duration: 0.3 }}
                             style={{ ...styles.alert, ...styles.alertDanger }}
                         >
-                            ⚠️ Invalid username or password.
+                            Invalid username or password.
+                        </motion.div>
+                    )}
+                    {hasOauthError && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0, y: -10 }}
+                            animate={{ opacity: 1, height: 'auto', y: 0 }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            style={{ ...styles.alert, ...styles.alertDanger }}
+                        >
+                            {oauthErrorMessage}
                         </motion.div>
                     )}
                     {hasLogout && (
@@ -125,31 +196,38 @@ const LoginPage = () => {
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             style={{ ...styles.alert, ...styles.alertSuccess }}
-                        >✅ You have been logged out.</motion.div>
+                        >You have been logged out.</motion.div>
                     )}
                     {hasRegistered && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             style={{ ...styles.alert, ...styles.alertSuccess }}
-                        >🎉 Registration successful! Please login.</motion.div>
+                        >Registration successful. Please login.</motion.div>
                     )}
                     {hasResetSuccess && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             style={{ ...styles.alert, ...styles.alertSuccess }}
-                        >🔐 Password updated! You can now login.</motion.div>
+                        >Password updated. You can now login.</motion.div>
                     )}
                 </AnimatePresence>
 
-                <form action="/login" method="post" onSubmit={() => setLoading(true)} style={styles.form}>
+                <form
+                    action="/login"
+                    method="post"
+                    onSubmit={(e) => {
+                        setLoading(true);
+                    }}
+                    style={styles.form}
+                >
                     {/* Hidden field for redirect flow */}
                     <input type="hidden" name="redirectTo" value={params.get('redirectTo') || ''} />
 
                     {/* Username field */}
                     <motion.div custom={0} variants={fieldVariants} initial="hidden" animate="visible" style={styles.inputGroup}>
-                        <motion.span style={styles.inputIcon} animate={{ color: focused === 'username' ? '#60a5fa' : 'rgba(255,255,255,0.5)' }}>
+                        <motion.span style={styles.inputIcon} animate={{ color: focused === 'username' ? '#3b82f6' : '#94a3b8' }}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                             </svg>
@@ -163,7 +241,7 @@ const LoginPage = () => {
 
                     {/* Password field */}
                     <motion.div custom={1} variants={fieldVariants} initial="hidden" animate="visible" style={styles.inputGroup}>
-                        <motion.span style={styles.inputIcon} animate={{ color: focused === 'password' ? '#60a5fa' : 'rgba(255,255,255,0.5)' }}>
+                        <motion.span style={styles.inputIcon} animate={{ color: focused === 'password' ? '#3b82f6' : '#94a3b8' }}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
                             </svg>
@@ -199,6 +277,43 @@ const LoginPage = () => {
                                 </>
                             )}
                         </motion.button>
+
+                        <div style={{ textAlign: 'center', margin: '14px 0', color: '#94a3b8', fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Or</div>
+
+                        {googleEnabled && (
+                            <>
+                                <motion.a
+                                    whileHover={{ scale: 1.02, boxShadow: '0 12px 35px rgba(59,130,246,0.3)' }}
+                                    whileTap={{ scale: 0.97 }}
+                                    href={googleAuthUrl}
+                                    style={{ ...styles.googleButton, textDecoration: 'none' }}
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 533.5 544.3" aria-hidden="true" style={{ marginRight: 10 }}>
+                                        <path fill="#4285F4" d="M533.5 278.4c0-17.4-1.4-34.1-4.1-50.4H272v95.3h147.3c-6.4 34.7-25.8 64.1-55 83.9v69h88.7c52-47.9 80.5-118.5 80.5-195.1z" />
+                                        <path fill="#34A853" d="M272 544.3c74.7 0 137.4-24.7 183.2-67.1l-88.7-69c-24.6 16.5-56.1 26.2-94.5 26.2-72.7 0-134.3-49-156.3-115.1H24v72.2C69.8 483.9 164.6 544.3 272 544.3z" />
+                                        <path fill="#FBBC04" d="M115.7 319.3c-5.6-16.5-8.8-34.1-8.8-52.3s3.2-35.8 8.8-52.3V142.5H24C8.7 173.7 0 210.2 0 247c0 36.8 8.7 73.3 24 104.5l91.7-71.2z" />
+                                        <path fill="#EA4335" d="M272 109.3c40.6 0 77 14 105.7 41.3l79.2-79.2C409.2 24.5 346.5 0 272 0 164.6 0 69.8 60.4 24 142.5l91.7 71.2C137.7 158.3 199.3 109.3 272 109.3z" />
+                                    </svg>
+                                    Continue with Google
+                                </motion.a>
+
+                                <div style={{ textAlign: 'center', margin: '14px 0', color: '#94a3b8', fontSize: '0.85rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Or</div>
+                            </>
+                        )}
+
+                        <motion.button
+                            whileHover={{ scale: 1.02, backgroundColor: '#e2e8f0' }}
+                            whileTap={{ scale: 0.97 }}
+                            type="button"
+                            onClick={() => setShowFaceLogin(true)}
+                            style={styles.faceIdButton}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                                <path d="M5 3q-2 0-2 2v4a1 1 0 002 0V5h4a1 1 0 000-2H5zM19 3q2 0 2 2v4a1 1 0 01-2 0V5h-4a1 1 0 010-2h4zM5 21q-2 0-2-2v-4a1 1 0 012 0v4h4a1 1 0 010 2H5zM19 21q2 0 2-2v-4a1 1 0 00-2 0v4h-4a1 1 0 000 2h4z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Login with Face ID
+                        </motion.button>
                     </motion.div>
                 </form>
 
@@ -210,7 +325,7 @@ const LoginPage = () => {
                     style={styles.footer}
                 >
                     <a href="/forgot-password" style={styles.linkMuted}>Forgot Password?</a>
-                    <a href="/register/patient" style={styles.linkBold}>Create Account →</a>
+                    <a href="/register/patient" style={styles.linkBold}>Create Account -&gt;</a>
                 </motion.div>
             </motion.div>
         </div>
@@ -223,73 +338,72 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url(/images/login_bg.webp)`,
+        background: 'transparent',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
-        fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+        fontFamily: "var(--app-font-sans)",
         position: 'relative',
         overflow: 'hidden',
     },
     orb1: {
         position: 'absolute',
-        width: 400,
-        height: 400,
+        width: 500,
+        height: 500,
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(37,99,235,0.25) 0%, transparent 70%)',
-        top: '-100px',
-        left: '-100px',
+        background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)',
+        top: '-150px',
+        left: '-150px',
         pointerEvents: 'none',
     },
     orb2: {
         position: 'absolute',
-        width: 350,
-        height: 350,
+        width: 450,
+        height: 450,
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(124,58,237,0.2) 0%, transparent 70%)',
-        bottom: '-80px',
-        right: '-80px',
+        background: 'radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%)',
+        bottom: '-120px',
+        right: '-120px',
         pointerEvents: 'none',
     },
     card: {
         position: 'relative',
         zIndex: 10,
         width: '100%',
-        maxWidth: '440px',
+        maxWidth: '460px',
         margin: '0 16px',
-        padding: '2.5rem',
-        background: 'rgba(255,255,255,0.1)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
+        padding: '3rem',
+        background: 'rgba(255,255,255,0.86)',
         borderRadius: '24px',
-        border: '1px solid rgba(255,255,255,0.2)',
-        boxShadow: '0 25px 50px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+        border: '1px solid rgba(15,23,42,0.10)',
+        boxShadow: '0 30px 90px rgba(15,23,42,0.12)',
         textAlign: 'center',
+        backdropFilter: 'blur(14px)',
     },
     iconWrap: {
         width: 72,
         height: 72,
-        background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+        background: 'linear-gradient(135deg, rgba(14,165,233,0.95), rgba(37,99,235,0.95))',
         borderRadius: '20px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         margin: '0 auto 1.2rem',
-        boxShadow: '0 8px 20px rgba(37,99,235,0.4)',
+        boxShadow: '0 22px 55px rgba(37,99,235,0.22)',
     },
     title: {
-        fontSize: '2rem',
-        fontWeight: '700',
-        color: 'white',
-        margin: '0 0 0.3rem',
-        letterSpacing: '-0.5px',
-        textShadow: '0 2px 10px rgba(0,0,0,0.3)',
+        fontSize: '2.2rem',
+        fontWeight: '800',
+        fontFamily: 'var(--app-font-display)',
+        color: 'var(--app-text)',
+        margin: '0 0 0.5rem',
+        letterSpacing: '-1px',
     },
     subtitle: {
-        fontSize: '0.95rem',
-        color: 'rgba(255,255,255,0.65)',
-        marginBottom: '1.5rem',
-        margin: '0 0 1.5rem',
+        fontSize: '1rem',
+        color: 'var(--app-muted)',
+        marginBottom: '2rem',
+        margin: '0 0 2rem',
     },
     alert: {
         padding: '10px 14px',
@@ -322,46 +436,77 @@ const styles = {
     },
     inputIcon: {
         position: 'absolute',
-        left: '14px',
+        left: '16px',
         display: 'flex',
         alignItems: 'center',
         pointerEvents: 'none',
         zIndex: 1,
-        color: 'rgba(255,255,255,0.5)',
+        color: '#94a3b8',
         transition: 'color 0.3s',
     },
     input: {
         width: '100%',
-        padding: '14px 14px 14px 46px',
-        background: 'rgba(255,255,255,0.07)',
-        border: '1px solid rgba(255,255,255,0.15)',
+        padding: '16px 16px 16px 48px',
+        background: '#f8fafc',
+        border: '1px solid #e2e8f0',
         borderRadius: '12px',
-        color: 'white',
+        color: '#1e293b',
         fontSize: '1rem',
         outline: 'none',
         transition: 'all 0.3s ease',
         boxSizing: 'border-box',
     },
     inputFocused: {
-        background: 'rgba(255,255,255,0.13)',
-        border: '1px solid rgba(96,165,250,0.6)',
-        boxShadow: '0 0 0 3px rgba(37,99,235,0.2)',
+        background: '#ffffff',
+        border: '1px solid #3b82f6',
+        boxShadow: '0 0 0 4px rgba(59, 130, 246, 0.1)',
     },
     button: {
         width: '100%',
-        marginTop: '6px',
-        padding: '14px',
-        background: 'linear-gradient(135deg, #2563eb, #3b82f6)',
+        marginTop: '8px',
+        padding: '16px',
+        background: 'linear-gradient(135deg, rgba(14,165,233,0.98), rgba(37,99,235,0.98))',
         border: 'none',
-        borderRadius: '12px',
+        borderRadius: '14px',
         color: 'white',
         fontSize: '1.05rem',
-        fontWeight: '600',
+        fontWeight: '800',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: '0 6px 20px rgba(37,99,235,0.4)',
+        boxShadow: '0 22px 55px rgba(37,99,235,0.22)',
+        transition: 'all 0.3s',
+    },
+    googleButton: {
+        width: '100%',
+        padding: '16px',
+        background: '#ffffff',
+        border: '1px solid rgba(59,130,246,0.35)',
+        borderRadius: '14px',
+        color: '#0f172a',
+        fontSize: '1.05rem',
+        fontWeight: '850',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'all 0.3s',
+        boxShadow: '0 18px 45px rgba(59,130,246,0.12)',
+    },
+    faceIdButton: {
+        width: '100%',
+        padding: '16px',
+        background: 'rgba(255,255,255,0.75)',
+        border: '1px solid rgba(15,23,42,0.12)',
+        borderRadius: '14px',
+        color: 'rgba(15,23,42,0.82)',
+        fontSize: '1.05rem',
+        fontWeight: '850',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         transition: 'all 0.3s',
     },
     spinner: {
@@ -379,13 +524,13 @@ const styles = {
         fontSize: '0.88rem',
     },
     linkMuted: {
-        color: 'rgba(255,255,255,0.55)',
+        color: '#64748b',
         textDecoration: 'none',
         transition: 'color 0.2s',
     },
     linkBold: {
-        color: '#60a5fa',
-        fontWeight: '700',
+        color: '#3b82f6',
+        fontWeight: '600',
         textDecoration: 'none',
         transition: 'color 0.2s',
     },

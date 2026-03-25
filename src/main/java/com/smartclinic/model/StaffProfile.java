@@ -28,7 +28,7 @@ public class StaffProfile {
     private String email;
 
     @NotBlank(message = "Job Role is required")
-    private String jobRole; // Receptionist, Nurse
+    private String jobRole; // Nurse, Finance Manager, Pharmacist
 
     @Column(columnDefinition = "TEXT")
     private String address;

@@ -21,13 +21,15 @@ public class UserService {
     private final PatientRepository patientRepository;
     private final AppointmentRepository appointmentRepository;
     private final UserRepository userRepository;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @PostConstruct
     public void initData() {
         // Initialize Users
         createUserIfNotFound("admin", "password", "ADMIN");
         createUserIfNotFound("doctor", "password", "DOCTOR");
-        createUserIfNotFound("finance", "password", "PAYMENT_MANAGER");
+        createUserIfNotFound("finance", "password", "FINANCE_MANAGER");
+        createUserIfNotFound("pharmacist", "password", "PHARMACIST");
         createUserIfNotFound("patient", "password", "PATIENT");
 
         // Initialize Sample Data logic
@@ -68,7 +70,7 @@ public class UserService {
         if (userRepository.findByUsername(username).isEmpty()) {
             User user = new User();
             user.setUsername(username);
-            user.setPassword(password);
+            user.setPassword(passwordEncoder.encode(password));
             user.setRole(role);
             userRepository.save(user);
         }

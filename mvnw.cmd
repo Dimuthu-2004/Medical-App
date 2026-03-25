@@ -60,10 +60,23 @@ set ERROR_CODE=0
 @REM ==== START VALIDATION ====
 if not "%JAVA_HOME%" == "" goto OkJHome
 
+@REM Fall back to a JDK on PATH when JAVA_HOME is not set.
+@REM Prefer javac.exe (ensures we have a JDK), then fall back to java.exe.
+for /f "delims=" %%i in ('where.exe javac 2^>NUL') do (
+  if exist "%%~dpijava.exe" (
+    set "MAVEN_JAVA_EXE=%%~dpijava.exe"
+    goto init
+  )
+)
+for /f "delims=" %%i in ('where.exe java 2^>NUL') do (
+  set "MAVEN_JAVA_EXE=%%i"
+  goto init
+)
+
 echo.
-echo Error: JAVA_HOME not found in your environment. >&2
+echo Error: JAVA_HOME not found in your environment and no java.exe was found on PATH. >&2
 echo Please set the JAVA_HOME variable in your environment to match the >&2
-echo location of your Java installation. >&2
+echo location of your Java installation, or add java.exe to PATH. >&2
 echo.
 goto error
 
@@ -116,7 +129,7 @@ for /F "usebackq delims=" %%a in ("%MAVEN_PROJECTBASEDIR%\.mvn\jvm.config") do s
 
 :endReadAdditionalConfig
 
-SET MAVEN_JAVA_EXE="%JAVA_HOME%\bin\java.exe"
+if "%MAVEN_JAVA_EXE%" == "" SET "MAVEN_JAVA_EXE=%JAVA_HOME%\bin\java.exe"
 set WRAPPER_JAR="%MAVEN_PROJECTBASEDIR%\.mvn\wrapper\maven-wrapper.jar"
 set WRAPPER_LAUNCHER=org.apache.maven.wrapper.MavenWrapperMain
 
@@ -158,7 +171,7 @@ if exist %WRAPPER_JAR% (
 @REM work with both Windows and non-Windows executions.
 set MAVEN_CMD_LINE_ARGS=%*
 
-%MAVEN_JAVA_EXE% %JVM_CONFIG_MAVEN_PROPS% %MAVEN_OPTS% %MAVEN_DEBUG_OPTS% -classpath %WRAPPER_JAR% "-Dmaven.multiModuleProjectDirectory=%MAVEN_PROJECTBASEDIR%" %WRAPPER_LAUNCHER% %MAVEN_CONFIG% %*
+"%MAVEN_JAVA_EXE%" %JVM_CONFIG_MAVEN_PROPS% %MAVEN_OPTS% %MAVEN_DEBUG_OPTS% -classpath %WRAPPER_JAR% "-Dmaven.multiModuleProjectDirectory=%MAVEN_PROJECTBASEDIR%" %WRAPPER_LAUNCHER% %MAVEN_CONFIG% %*
 if ERRORLEVEL 1 goto error
 goto end
 

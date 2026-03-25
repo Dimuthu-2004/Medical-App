@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../services/api';
+import FaceAuthModal from '../components/FaceAuthModal';
+import PasswordStrengthMeter from '../components/PasswordStrengthMeter';
+import { getPasswordPolicyError } from '../utils/passwordPolicy';
 
 const STEPS = [
     { label: 'Account', icon: '🔐' },
@@ -46,10 +49,10 @@ const Input = ({ label, required, children, style }) => (
 const inputStyle = (focused = false) => ({
     width: '100%',
     padding: '13px 16px',
-    background: focused ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
-    border: focused ? '1px solid #3b82f6' : '1px solid rgba(255,255,255,0.08)',
+    background: 'var(--app-surface)',
+    border: focused ? '1px solid #3b82f6' : '1px solid var(--app-border)',
     borderRadius: '14px',
-    color: '#fff',
+    color: 'var(--app-text)',
     fontSize: '0.95rem',
     outline: 'none',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -60,7 +63,7 @@ const selectStyle = (focused = false) => ({
     ...inputStyle(focused),
     cursor: 'pointer',
     appearance: 'none',
-    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
     backgroundRepeat: 'no-repeat',
     backgroundPosition: 'right 16px center',
 });
@@ -69,6 +72,7 @@ export default function RegisterDoctorPage() {
     const [step, setStep] = useState(0);
     const [focused, setFocused] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showFaceRegister, setShowFaceRegister] = useState(false);
 
     const [form, setForm] = useState({
         username: '', password: '', confirmPassword: '',
@@ -81,6 +85,19 @@ export default function RegisterDoctorPage() {
     const blur = () => setFocused('');
 
     const [errors, setErrors] = useState({});
+    const validateAccountStep = () => {
+        const nextErrors = {};
+        if (!form.username) nextErrors.username = 'Username is required';
+
+        const passwordPolicyError = getPasswordPolicyError(form.password);
+        if (passwordPolicyError) nextErrors.password = passwordPolicyError;
+
+        if (!form.confirmPassword) nextErrors.confirmPassword = 'Confirm password is required';
+        if (form.password !== form.confirmPassword) nextErrors.confirmPassword = 'Passwords do not match';
+
+        setErrors(nextErrors);
+        return Object.keys(nextErrors).length === 0;
+    };
 
     const handleSubmit = async (e) => {
         if (e && e.preventDefault) e.preventDefault();
@@ -90,8 +107,7 @@ export default function RegisterDoctorPage() {
 
         setErrors({});
 
-        if (form.password !== form.confirmPassword) {
-            setErrors({ confirmPassword: 'Passwords do not match' });
+        if (!validateAccountStep()) {
             return;
         }
 
@@ -115,7 +131,7 @@ export default function RegisterDoctorPage() {
         };
 
         try {
-            await api.post('/register/doctor', payload);
+            await api.post('/api/auth/register/doctor', payload);
             window.location.href = '/login?registered';
         } catch (err) {
             setLoading(false);
@@ -132,8 +148,8 @@ export default function RegisterDoctorPage() {
                     color: white;
                 }
             `}</style>
+            <FaceAuthModal isOpen={showFaceRegister} onClose={() => setShowFaceRegister(false)} mode="register" />
             <MeshGradient />
-
             <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -152,6 +168,25 @@ export default function RegisterDoctorPage() {
                     </motion.div>
                     <h2 style={styles.title}>Doctor Registration</h2>
                     <p style={styles.desc}>Join our network of healthcare professionals</p>
+
+                    <div style={{ marginTop: '24px' }}>
+                        <motion.button
+                            type="button" onClick={() => setShowFaceRegister(true)}
+                            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                            style={styles.btnFaceScan}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: 8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                                <path d="M5 3q-2 0-2 2v4a1 1 0 002 0V5h4a1 1 0 000-2H5zM19 3q2 0 2 2v4a1 1 0 01-2 0V5h-4a1 1 0 010-2h4zM5 21q-2 0-2-2v-4a1 1 0 012 0v4h4a1 1 0 010 2H5zM19 21q2 0 2-2v-4a1 1 0 00-2 0v4h-4a1 1 0 000 2h4z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Quick Face Registration
+                        </motion.button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '24px 0 0', opacity: 0.3 }}>
+                            <div style={{ height: 1, background: '#fff', flex: 1 }}></div>
+                            <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: 1, fontWeight: '600' }}>Or Manual Profile</span>
+                            <div style={{ height: 1, background: '#fff', flex: 1 }}></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div style={styles.stepper}>
@@ -185,9 +220,12 @@ export default function RegisterDoctorPage() {
                                 <div style={styles.grid}>
                                     <Input label="Username" required style={{ gridColumn: '1 / -1' }}>
                                         <input name="username" value={form.username} onChange={set('username')} onFocus={fb('user')} onBlur={blur} style={inputStyle(focused === 'user')} placeholder="Doctor username" required />
+                                        {errors.username && <span style={{ color: '#f87171', fontSize: '0.75rem', marginTop: 4 }}>{errors.username}</span>}
                                     </Input>
                                     <Input label="Password" required>
                                         <input type="password" name="password" value={form.password} onChange={set('password')} onFocus={fb('pass')} onBlur={blur} style={inputStyle(focused === 'pass')} placeholder="••••••••" required />
+                                        <PasswordStrengthMeter password={form.password} />
+                                        {errors.password && <span style={{ color: '#f87171', fontSize: '0.75rem', marginTop: 4 }}>{errors.password}</span>}
                                     </Input>
                                     <Input label="Confirm Password" required>
                                         <input type="password" name="confirmPassword" value={form.confirmPassword} onChange={set('confirmPassword')} onFocus={fb('cp')} onBlur={blur} style={inputStyle(focused === 'cp')} placeholder="••••••••" required />
@@ -195,7 +233,7 @@ export default function RegisterDoctorPage() {
                                     </Input>
                                 </div>
                                 <div style={styles.navRow}>
-                                    <motion.button type="button" onClick={() => setStep(1)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={styles.btnPrimary}>
+                                    <motion.button type="button" onClick={() => { if (validateAccountStep()) setStep(1); }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} style={styles.btnPrimary}>
                                         Next Step →
                                     </motion.button>
                                 </div>
@@ -250,7 +288,7 @@ export default function RegisterDoctorPage() {
 const styles = {
     body: {
         minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#050507', position: 'relative', overflow: 'hidden', padding: '40px 20px',
+        background: 'var(--app-bg)', position: 'relative', overflow: 'hidden', padding: '40px 20px',
         fontFamily: "'Inter', system-ui, sans-serif",
     },
     meshContainer: { position: 'absolute', inset: 0, opacity: 0.35, filter: 'blur(100px)', zIndex: 0 },
@@ -258,9 +296,9 @@ const styles = {
     meshBall2: { position: 'absolute', width: 600, height: 600, borderRadius: '50%', background: '#8b5cf6', bottom: '-10%', right: '-5%' },
     card: {
         position: 'relative', zIndex: 1, width: '100%', maxWidth: '600px', padding: '3.5rem',
-        background: 'rgba(255,255,255,0.02)', backdropFilter: 'blur(40px)',
-        borderRadius: '35px', border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 50px 100px rgba(0,0,0,0.6)',
+        background: 'var(--app-surface)', backdropFilter: 'blur(12px)',
+        borderRadius: '35px', border: '1px solid var(--app-border)',
+        boxShadow: '0 25px 50px -12px rgba(2, 6, 23, 0.16)',
     },
     header: { textAlign: 'center', marginBottom: '3rem' },
     iconWrap: {
@@ -268,8 +306,8 @@ const styles = {
         borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center',
         margin: '0 auto 1.5rem', boxShadow: '0 15px 35px rgba(59,130,246,0.3)',
     },
-    title: { fontSize: '2rem', fontWeight: '900', color: '#fff', margin: 0, letterSpacing: '-0.8px' },
-    desc: { color: 'rgba(255,255,255,0.45)', marginTop: 10, fontSize: '1rem' },
+    title: { fontSize: '2rem', fontWeight: '900', color: 'var(--app-text)', margin: 0, letterSpacing: '-0.8px' },
+    desc: { color: 'var(--app-muted)', marginTop: 10, fontSize: '1rem' },
     stepper: { position: 'relative', display: 'flex', justifyContent: 'space-around', marginBottom: '3.5rem' },
     stepperLine: { position: 'absolute', top: 21, left: '20%', right: '20%', height: 2, background: 'rgba(255,255,255,0.05)', zIndex: 0 },
     stepItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, zIndex: 1 },
@@ -280,7 +318,7 @@ const styles = {
     stepLabel: { fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px' },
     grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' },
     fieldWrap: { display: 'flex', flexDirection: 'column', gap: 8 },
-    label: { fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', fontWeight: '700', marginLeft: 4 },
+    label: { fontSize: '0.85rem', color: 'var(--app-muted)', fontWeight: '700', marginLeft: 4 },
     navRow: { display: 'flex', gap: 15, marginTop: '3.5rem' },
     btnPrimary: {
         width: '100%', padding: '16px', background: '#3b82f6', color: '#fff', border: 'none',
@@ -291,8 +329,14 @@ const styles = {
         border: 'none', borderRadius: '16px', fontWeight: '800', fontSize: '1.05rem', cursor: 'pointer',
     },
     btnSecondary: {
-        padding: '16px 30px', background: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.8)',
-        border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', fontWeight: '700', cursor: 'pointer',
+        padding: '16px 30px', background: 'var(--app-surface)', color: '#334155',
+        border: '1px solid var(--app-border)', borderRadius: '16px', fontWeight: '700', cursor: 'pointer',
     },
-    footerLink: { marginTop: '2.5rem', textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: '0.9rem' },
+    link: { color: '#3b82f6', textDecoration: 'none', fontWeight: '700' },
+    btnFaceScan: {
+        padding: '12px 24px', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa',
+        border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '14px', fontWeight: '600',
+        fontSize: '0.95rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+        justifyContent: 'center', transition: 'all 0.2s', boxShadow: '0 8px 16px rgba(59, 130, 246, 0.1)'
+    },
 };
