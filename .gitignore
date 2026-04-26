@@ -1,0 +1,79 @@
+.env
+.env.*
+!.env.prod.example
+application-local.properties
+
+# IDE / OS
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store
+Microsoft/
+
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+*.log
+build.log
+backend-live.log
+backend-live.err.log
+spring.log
+spring.err.log
+
+# Frontend
+frontend/node/
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/vite.config.js.timestamp-*.mjs
+
+# Python
+venv/
+venv_old_*/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+chat-api/venv/
+face-api/venv/
+face-api/venv_old_*/
+ocr-api/venv/
+
+chat-api/__pycache__/
+face-api/__pycache__/
+ocr-api/__pycache__/
+
+# Runtime caches / generated docs
+chat-api/.rag_cache.json
+chat-api/rag_docs/_system_snapshot.md
+logs/
+
+# Uploaded/generated assets
+uploads/payment-slips/
+face-api/models/
+
+# Deployment scratch space
+deploy/huggingface-spaces-clean/
+
+# Local docs and analysis scratch files
+CODEBASE_EXPLORATION.md
+review model/
+cookies.txt
+test_interaction.json
+
+# Secrets
+client_secret_*.json
+groq api === *.txt
+
+# Large local archives / datasets not required to run the app
+archive.zip
+Final_Augmented_dataset_Diseases_and_Symptoms.csv
+Final_Augmented_dataset_Diseases_and_Symptoms.csv.zip
+IMDB Dataset.csv
+IMDB Dataset.csv.zip
